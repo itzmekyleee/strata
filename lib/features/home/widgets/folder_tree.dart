@@ -1,0 +1,341 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../app/theme/strata_palette.dart';
+import '../../../core/widgets/menu_items.dart';
+import '../../../core/widgets/toasts.dart';
+import '../../../data/models/note_folder.dart';
+import '../../../providers/core_providers.dart';
+import '../../../providers/folder_counts.dart';
+import '../../../providers/notes_providers.dart';
+
+class SelectedFolder extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void select(int? id) => state = id;
+}
+
+final selectedFolderProvider = NotifierProvider<SelectedFolder, int?>(
+  SelectedFolder.new,
+);
+
+class FolderTree extends ConsumerStatefulWidget {
+  const FolderTree({super.key, this.onPicked, this.compact = false});
+
+  final ValueChanged<NoteFolder?>? onPicked;
+  final bool compact;
+
+  @override
+  ConsumerState<FolderTree> createState() => _FolderTreeState();
+}
+
+class _FolderTreeState extends ConsumerState<FolderTree> {
+  final Set<int?> _expanded = {null};
+
+  @override
+  Widget build(BuildContext context) {
+    final folders = ref.watch(foldersStreamProvider).value ?? const [];
+    final selected = ref.watch(selectedFolderProvider);
+    final counts = ref.watch(folderNoteCountProvider).value ?? const {};
+    final byParent = <int?, List<NoteFolder>>{};
+    for (final f in folders) {
+      byParent.putIfAbsent(f.parentId, () => []).add(f);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Row(
+          label: 'All notes',
+          icon: Icons.folder_copy_outlined,
+          depth: 0,
+          compact: widget.compact,
+          selected: selected == null,
+          count: counts[null],
+          onTap: () {
+            ref.read(selectedFolderProvider.notifier).select(null);
+            widget.onPicked?.call(null);
+          },
+        ),
+        for (final root in byParent[null] ?? const <NoteFolder>[])
+          _node(context, root, byParent, 1, selected, counts),
+      ],
+    );
+  }
+
+  Widget _node(
+    BuildContext context,
+    NoteFolder folder,
+    Map<int?, List<NoteFolder>> byParent,
+    int depth,
+    int? selected,
+    Map<int?, int> counts,
+  ) {
+    final children = byParent[folder.id] ?? const <NoteFolder>[];
+    final isExpanded = _expanded.contains(folder.id);
+    final isSelected = selected == folder.id;
+
+    return Column(
+      key: ValueKey('folder-${folder.id}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Row(
+          label: folder.name,
+          icon: isExpanded && children.isNotEmpty
+              ? Icons.folder_open_rounded
+              : Icons.folder_rounded,
+          color: Color(folder.colorValue),
+          depth: depth,
+          compact: widget.compact,
+          selected: isSelected,
+          count: counts[folder.id],
+          hasChildren: children.isNotEmpty,
+          expanded: isExpanded,
+          onToggle: children.isEmpty
+              ? null
+              : () => setState(
+                  () => isExpanded
+                      ? _expanded.remove(folder.id)
+                      : _expanded.add(folder.id),
+                ),
+          onTap: () {
+            ref.read(selectedFolderProvider.notifier).select(folder.id);
+            widget.onPicked?.call(folder);
+          },
+          onMenuSelected: (value) => _menu(value, folder),
+        ),
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 220),
+          sizeCurve: Curves.easeOutCubic,
+          crossFadeState: isExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          firstChild: const SizedBox(width: double.infinity),
+          secondChild: Column(
+            children: [
+              for (final child in children)
+                _node(context, child, byParent, depth + 1, selected, counts),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _menu(String value, NoteFolder folder) async {
+    final folders = ref.read(foldersRepositoryProvider);
+    switch (value) {
+      case 'new':
+        await promptNewFolder(context, ref, parentId: folder.id);
+      case 'rename':
+        final controller = TextEditingController(text: folder.name);
+        final name = await promptText(
+          context,
+          title: 'Rename folder',
+          hint: 'Folder name',
+          controller: controller,
+        );
+        if (name != null && name.trim().isNotEmpty) {
+          await folders.rename(folder, name.trim());
+        }
+        controller.dispose();
+      case 'delete':
+        await folders.deletePromotingChildren(folder.id);
+        ref.read(selectedFolderProvider.notifier).select(null);
+        showToast(ref, 'Folder deleted, contents moved up');
+    }
+  }
+}
+
+Future<void> promptNewFolder(
+  BuildContext context,
+  WidgetRef ref, {
+  int? parentId,
+}) async {
+  final name = await promptText(
+    context,
+    title: 'New folder',
+    hint: 'Folder name',
+  );
+  if (name != null && name.trim().isNotEmpty) {
+    await ref
+        .read(foldersRepositoryProvider)
+        .create(name.trim(), parentId, StrataPalette.accent.toARGB32());
+    if (context.mounted) showToast(ref, 'Folder created');
+  }
+}
+
+Future<String?> promptText(
+  BuildContext context, {
+  required String title,
+  required String hint,
+  TextEditingController? controller,
+}) {
+  final own = controller ?? TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(title),
+      content: TextField(
+        controller: own,
+        autofocus: true,
+        decoration: InputDecoration(hintText: hint),
+        onSubmitted: (v) => Navigator.of(ctx).pop(v),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(own.text),
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  ).whenComplete(() {
+    if (controller == null) own.dispose();
+  });
+}
+
+class _Row extends StatelessWidget {
+  const _Row({
+    required this.label,
+    required this.icon,
+    required this.depth,
+    required this.selected,
+    required this.compact,
+    this.color,
+    this.count,
+    this.hasChildren = false,
+    this.expanded = false,
+    this.onTap,
+    this.onToggle,
+    this.onMenuSelected,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color? color;
+  final int? count;
+  final int depth;
+  final bool selected;
+  final bool compact;
+  final bool hasChildren;
+  final bool expanded;
+  final VoidCallback? onTap;
+  final VoidCallback? onToggle;
+  final ValueChanged<String>? onMenuSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final semanticsLabel = '${count != null ? "$count notes. " : ""}'
+        '${selected ? "Selected. " : ""}'
+        '${hasChildren ? (expanded ? "Expanded." : "Collapsed.") : ''}';
+    return Padding(
+      padding: EdgeInsets.only(left: compact ? 0 : depth * 12.0),
+      child: Semantics(
+        label: '$label. $semanticsLabel',
+        button: true,
+        selected: selected,
+        child: Material(
+        color: selected
+            ? StrataPalette.accent.withValues(alpha: .13)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            child: Row(
+              children: [
+                if (hasChildren)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onToggle,
+                    child: AnimatedRotation(
+                      turns: expanded ? .25 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  const SizedBox(width: 16),
+                Icon(icon, size: 17, color: color ?? theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (count != null)
+                  Container(
+                    margin: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (color ?? theme.colorScheme.primary)
+                          .withValues(alpha: .15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: color ?? theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                if (onMenuSelected != null)
+                  PopupMenuButton<String>(
+                    onSelected: onMenuSelected,
+                    splashRadius: 18,
+                    padding: EdgeInsets.zero,
+                    iconSize: 17,
+                    constraints: const BoxConstraints(minWidth: 196),
+                    itemBuilder: (_) => [
+                      strataPopupItem(
+                        value: 'new',
+                        icon: Icons.create_new_folder_outlined,
+                        label: 'New subfolder',
+                      ),
+                      strataPopupItem(
+                        value: 'rename',
+                        icon: Icons.drive_file_rename_outline_rounded,
+                        label: 'Rename',
+                      ),
+                      strataPopupItem(
+                        value: 'delete',
+                        icon: Icons.delete_outline_rounded,
+                        label: 'Delete',
+                        danger: true,
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+}
