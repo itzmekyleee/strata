@@ -30,28 +30,28 @@ class StrataMenuRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 30,
-          height: 30,
+          width: 28,
+          height: 28,
           decoration: BoxDecoration(
             color: danger
                 ? StrataPalette.coral.withValues(alpha: .13)
                 : StrataPalette.accent.withValues(alpha: .1),
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            size: 16,
+            size: 15,
             color: enabled
                 ? (danger ? tint : StrataPalette.accent)
                 : StrataPalette.onSurfaceDim,
           ),
         ),
-        const SizedBox(width: 11),
+        const SizedBox(width: 10),
         Expanded(
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: enabled
                   ? (danger ? tint : StrataPalette.onBackground)
@@ -77,7 +77,7 @@ PopupMenuItem<T> strataPopupItem<T>({
   return PopupMenuItem<T>(
     value: value,
     enabled: enabled,
-    height: 46,
+    height: 42,
     padding: const EdgeInsets.symmetric(horizontal: 10),
     child: StrataMenuRow(
       icon: icon,
@@ -98,13 +98,13 @@ class StrataMenuHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 2),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
       child: Text(
         label.toUpperCase(),
         style: TextStyle(
-          fontSize: 10.5,
+          fontSize: 10,
           fontWeight: FontWeight.w700,
-          letterSpacing: 1.1,
+          letterSpacing: 1.0,
           color: StrataPalette.onSurfaceMuted,
         ),
       ),

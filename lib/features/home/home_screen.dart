@@ -6,10 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme/strata_palette.dart';
+import '../../core/widgets/confirm_dialog.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/global_shortcuts.dart';
 import '../../core/widgets/menu_items.dart';
 import '../../core/widgets/skeleton_card.dart';
+import '../../core/widgets/toasts.dart';
 import '../../data/models/note.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/notes_providers.dart';
@@ -30,13 +32,18 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _searchFocus = FocusNode();
+  final _searchCtrl = TextEditingController();
 
   /// When non-null on wide screens, the editor is shown inline to the right.
   int? _selectedNoteId;
 
+  bool _selectionMode = false;
+  final Set<int> _selectedIds = {};
+
   @override
   void dispose() {
     _searchFocus.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -68,7 +75,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
+    final size = MediaQuery.sizeOf(context);
+    final width = size.width;
+    final isLandscape = size.width > size.height;
+    final isThreePane = width >= 1100 && isLandscape;
     final searching = ref.watch(searchToggleProvider);
 
     // Handle images shared to Strata when the editor is not open.
@@ -77,93 +87,535 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final paths = ref.read(pendingSharedImagesProvider.notifier).takeAll();
       _importSharedImages(paths);
     });
+    ref.listen<bool>(searchToggleProvider, (prev, next) {
+      if (!next && _searchCtrl.text.isNotEmpty) {
+        _searchCtrl.clear();
+      }
+    });
+
+    if (isThreePane) {
+      return _buildThreePaneList(context, searching);
+    }
+
+    final sort = ref.watch(noteSortProvider);
 
     return Scaffold(
-      floatingActionButton: searching ? null : const _NewNoteFab(),
+      floatingActionButton: (searching || width < 640) ? null : const _NewNoteFab(),
       appBar: AppBar(
         titleSpacing: 16,
         centerTitle: false,
         automaticallyImplyLeading: false,
-        title: searching ? null : const _Title(),
+        leading: _selectionMode
+            ? IconButton(
+                tooltip: 'Cancel selection',
+                onPressed: _clearSelection,
+                icon: const Icon(Icons.close_rounded),
+              )
+            : null,
+        title: _selectionMode
+            ? Text('${_selectedIds.length} selected')
+            : const _Title(),
         actions: [
-          if (!searching) ...[
-            if (width < 1024)
-              IconButton(
-                tooltip: 'Folders',
-                visualDensity: VisualDensity.compact,
-                onPressed: () => _showFolderSheet(context, ref),
-                icon: const Icon(Icons.folder_copy_outlined),
-              ),
+          if (_selectionMode) ...[
             IconButton(
-              tooltip: 'Search',
-              visualDensity: VisualDensity.compact,
-              onPressed: () => _toggleSearch(true),
-              icon: const Icon(Icons.search_rounded),
+              tooltip: 'Move',
+              onPressed: _selectedIds.isEmpty ? null : _bulkMove,
+              icon: const Icon(Icons.drive_file_move_outlined),
             ),
-            PopupMenuButton<NoteSort>(
-              tooltip: 'Sort',
-              icon: const Icon(Icons.sort_rounded),
-              constraints: const BoxConstraints(minWidth: 216, maxWidth: 240),
-              onSelected: (s) => ref.read(noteSortProvider.notifier).set(s),
-              itemBuilder: (_) {
-                Widget check(NoteSort s) => Icon(
-                  Icons.check_rounded,
-                  size: 17,
-                  color: ref.read(noteSortProvider) == s
-                      ? StrataPalette.accent
-                      : Colors.transparent,
-                );
-                return [
-                  const PopupMenuItem<NoteSort>(
-                    enabled: false,
-                    padding: EdgeInsets.zero,
-                    child: StrataMenuHeader('Sort by'),
-                  ),
-                  strataPopupItem(
-                    value: NoteSort.updated,
-                    icon: Icons.history_rounded,
-                    label: 'Recently updated',
-                    trailing: check(NoteSort.updated),
-                  ),
-                  strataPopupItem(
-                    value: NoteSort.titleAsc,
-                    icon: Icons.sort_by_alpha_rounded,
-                    label: 'Title (A–Z)',
-                    trailing: check(NoteSort.titleAsc),
-                  ),
-                  strataPopupItem(
-                    value: NoteSort.dueDate,
-                    icon: Icons.event_available_outlined,
-                    label: 'By due date',
-                    trailing: check(NoteSort.dueDate),
-                  ),
-                ];
-              },
+            IconButton(
+              tooltip: 'Delete',
+              onPressed: _selectedIds.isEmpty ? null : _bulkDelete,
+              icon: const Icon(Icons.delete_outline_rounded),
             ),
-          ],
+          ] else if (width < 1024)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: OutlinedButton.icon(
+                onPressed: () => _showFolderSheet(context, ref),
+                icon: const Icon(Icons.folder_copy_outlined, size: 18),
+                label: const Text('Folders'),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  backgroundColor: StrataPalette.accent.withValues(alpha: .10),
+                  side: BorderSide(color: StrataPalette.accent.withValues(alpha: .25)),
+                  foregroundColor: StrataPalette.accent,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ),
+            ),
         ],
       ),
       body: SafeArea(
-        child: searching
-            ? InlineSearchPanel(
-                focusNode: _searchFocus,
-                onClose: () => _toggleSearch(false),
-              )
-            : _buildBody(width),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: TextField(
+                        controller: _searchCtrl,
+                        focusNode: _searchFocus,
+                        onTap: () => ref.read(searchToggleProvider.notifier).set(true),
+                        onChanged: (v) {
+                          ref.read(searchQueryProvider.notifier).set(v);
+                          ref.read(searchToggleProvider.notifier).set(true);
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search notes...',
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            size: 20,
+                            color: StrataPalette.onSurfaceMuted,
+                          ),
+                          prefixIconConstraints: const BoxConstraints(minWidth: 42),
+                          suffixIcon: searching
+                              ? IconButton(
+                                  tooltip: 'Clear search',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(Icons.close_rounded, size: 19),
+                                  onPressed: () => _toggleSearch(false),
+                                )
+                              : null,
+                          suffixIconConstraints: const BoxConstraints(minWidth: 40),
+                          filled: true,
+                          fillColor: StrataPalette.surfaceHigh.withValues(alpha: .55),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: StrataPalette.outline),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: StrataPalette.accent.withValues(alpha: .7),
+                              width: 1.4,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<NoteSort>(
+                    tooltip: 'Sort',
+                    popUpAnimationStyle: const AnimationStyle(
+                      duration: Duration(milliseconds: 140),
+                      curve: Curves.easeOutCubic,
+                    ),
+                    menuPadding: const EdgeInsets.symmetric(vertical: 4),
+                    initialValue: sort,
+                    onSelected: (s) => ref.read(noteSortProvider.notifier).set(s),
+                    itemBuilder: (_) => [
+                      const PopupMenuItem<NoteSort>(
+                        enabled: false,
+                        padding: EdgeInsets.zero,
+                        child: StrataMenuHeader('Sort by'),
+                      ),
+                      strataPopupItem(
+                        value: NoteSort.updated,
+                        icon: Icons.history_rounded,
+                        label: 'Recently updated',
+                        trailing: sort == NoteSort.updated
+                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            : null,
+                      ),
+                      strataPopupItem(
+                        value: NoteSort.titleAsc,
+                        icon: Icons.sort_by_alpha_rounded,
+                        label: 'Title (A–Z)',
+                        trailing: sort == NoteSort.titleAsc
+                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            : null,
+                      ),
+                      strataPopupItem(
+                        value: NoteSort.dueDate,
+                        icon: Icons.event_available_outlined,
+                        label: 'By due date',
+                        trailing: sort == NoteSort.dueDate
+                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            : null,
+                      ),
+                    ],
+                    child: Container(
+                      height: 44,
+                      width: 44,
+                      decoration: BoxDecoration(
+                        color: StrataPalette.surfaceHigh.withValues(alpha: .55),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: StrataPalette.outline),
+                      ),
+                      child: const Icon(Icons.sort_rounded, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: searching && ref.watch(searchQueryProvider).trim().isNotEmpty
+                  ? InlineSearchPanel(
+                      focusNode: _searchFocus,
+                      onClose: () => _toggleSearch(false),
+                      showField: false,
+                    )
+                  : _buildBody(width),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _buildThreePaneList(BuildContext context, bool searching) {
+    final selectedNoteId = ref.watch(selectedNoteIdProvider);
+    final folderId = ref.watch(selectedFolderProvider);
+    final sort = ref.watch(noteSortProvider);
+
+    String title = 'All notes';
+    if (folderId != null) {
+      final folders = ref.watch(foldersStreamProvider).value ?? const [];
+      for (final f in folders) {
+        if (f.id == folderId) {
+          title = f.name;
+          break;
+        }
+      }
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+              child: _selectionMode
+                  ? Row(
+                      children: [
+                        IconButton(
+                          tooltip: 'Cancel selection',
+                          onPressed: _clearSelection,
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '${_selectedIds.length} selected',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Move',
+                          onPressed: _selectedIds.isEmpty ? null : _bulkMove,
+                          icon: const Icon(Icons.drive_file_move_outlined),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete',
+                          onPressed: _selectedIds.isEmpty ? null : _bulkDelete,
+                          icon: const Icon(Icons.delete_outline_rounded),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.3,
+                                ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'New note',
+                          onPressed: () => _createNote(context),
+                          icon: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: StrataPalette.accent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 42,
+                      child: TextField(
+                        controller: _searchCtrl,
+                        focusNode: _searchFocus,
+                        onTap: () {
+                          if (!searching) ref.read(searchToggleProvider.notifier).set(true);
+                        },
+                        onChanged: (v) {
+                          ref.read(searchQueryProvider.notifier).set(v);
+                          ref.read(searchToggleProvider.notifier).set(true);
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search notes...',
+                          prefixIcon: Icon(Icons.search_rounded, size: 20, color: StrataPalette.onSurfaceMuted),
+                          prefixIconConstraints: const BoxConstraints(minWidth: 42),
+                          suffixIcon: searching
+                              ? IconButton(
+                                  tooltip: 'Close search',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(Icons.close_rounded, size: 18),
+                                  onPressed: () => _toggleSearch(false),
+                                )
+                              : null,
+                          suffixIconConstraints: const BoxConstraints(minWidth: 40),
+                          filled: true,
+                          fillColor: StrataPalette.surfaceHigh.withValues(alpha: .65),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: StrataPalette.outline),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: StrataPalette.accent.withValues(alpha: .7),
+                              width: 1.4,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<NoteSort>(
+                    tooltip: 'Sort',
+                    popUpAnimationStyle: const AnimationStyle(
+                      duration: Duration(milliseconds: 140),
+                      curve: Curves.easeOutCubic,
+                    ),
+                    menuPadding: const EdgeInsets.symmetric(vertical: 4),
+                    initialValue: sort,
+                    onSelected: (s) => ref.read(noteSortProvider.notifier).set(s),
+                    itemBuilder: (_) => [
+                      const PopupMenuItem<NoteSort>(
+                        enabled: false,
+                        padding: EdgeInsets.zero,
+                        child: StrataMenuHeader('Sort by'),
+                      ),
+                      strataPopupItem(
+                        value: NoteSort.updated,
+                        icon: Icons.history_rounded,
+                        label: 'Recently updated',
+                        trailing: sort == NoteSort.updated
+                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            : null,
+                      ),
+                      strataPopupItem(
+                        value: NoteSort.titleAsc,
+                        icon: Icons.sort_by_alpha_rounded,
+                        label: 'Title (A–Z)',
+                        trailing: sort == NoteSort.titleAsc
+                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            : null,
+                      ),
+                      strataPopupItem(
+                        value: NoteSort.dueDate,
+                        icon: Icons.event_available_outlined,
+                        label: 'By due date',
+                        trailing: sort == NoteSort.dueDate
+                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            : null,
+                      ),
+                    ],
+                    child: Container(
+                      height: 42,
+                      width: 42,
+                      decoration: BoxDecoration(
+                        color: StrataPalette.surfaceHigh.withValues(alpha: .65),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: StrataPalette.outline),
+                      ),
+                      child: const Icon(Icons.sort_rounded, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: searching && ref.watch(searchQueryProvider).trim().isNotEmpty
+                  ? InlineSearchPanel(
+                      focusNode: _searchFocus,
+                      onClose: () => _toggleSearch(false),
+                      onNoteTap: (id) {
+                        ref.read(selectedNoteIdProvider.notifier).select(id);
+                      },
+                      showField: false,
+                    )
+                  : _NotesList(
+                      selectedNoteId: selectedNoteId,
+                      selectionMode: _selectionMode,
+                      selectedIds: _selectedIds,
+                      onEnterSelection: _enterSelection,
+                      onToggleSelection: _toggleSelection,
+                      onNoteTap: (ctx, id) {
+                        ref.read(selectedNoteIdProvider.notifier).select(id);
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createNote(BuildContext context) async {
+    final folderId = ref.read(selectedFolderProvider);
+    final choice = await showTemplatePickerSheet(context, ref);
+    if (choice == null || !context.mounted) return;
+    final note = await ref.read(noteActionsProvider).createNote(
+          folderId: folderId,
+          title: choice.title,
+          contentDelta: choice.deltaJson,
+        );
+    ref.read(selectedNoteIdProvider.notifier).select(note.id);
+  }
+
+  void _enterSelection(int noteId) {
+    setState(() {
+      _selectionMode = true;
+      _selectedIds
+        ..clear()
+        ..add(noteId);
+    });
+  }
+
+  void _toggleSelection(int noteId) {
+    setState(() {
+      if (_selectedIds.contains(noteId)) {
+        _selectedIds.remove(noteId);
+        if (_selectedIds.isEmpty) _selectionMode = false;
+      } else {
+        _selectedIds.add(noteId);
+      }
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectionMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  Future<void> _bulkDelete() async {
+    final count = _selectedIds.length;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete $count note${count == 1 ? '' : 's'}?',
+      message: 'Selected notes will be moved to trash.',
+      confirmLabel: 'Delete',
+      icon: Icons.delete_outline_rounded,
+    );
+    if (confirmed != true) return;
+    final actions = ref.read(noteActionsProvider);
+    for (final id in _selectedIds.toList()) {
+      await actions.trash(id);
+    }
+    if (mounted) {
+      showToast(ref, '$count note${count == 1 ? '' : 's'} moved to trash');
+      _clearSelection();
+    }
+  }
+
+  Future<void> _bulkMove() async {
+    final folderId = await showModalBottomSheet<int?>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (ctx) => FractionallySizedBox(
+        heightFactor: .6,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Move to folder', style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.folder_copy_outlined),
+                title: const Text('All notes (no folder)'),
+                onTap: () => Navigator.of(ctx).pop(-1),
+              ),
+              const Divider(),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: FolderTree(
+                    showAllNotesRow: false,
+                    onPicked: (f) => Navigator.of(ctx).pop(f?.id),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (folderId == null) return;
+    final target = folderId == -1 ? null : folderId;
+    final repo = ref.read(notesRepositoryProvider);
+    for (final id in _selectedIds.toList()) {
+      final note = await repo.getById(id);
+      if (note == null) continue;
+      note.folderId = target;
+      await repo.save(note);
+    }
+    if (mounted) {
+      showToast(ref, 'Moved ${_selectedIds.length} note${_selectedIds.length == 1 ? '' : 's'}');
+      _clearSelection();
+    }
+  }
+
   Widget _buildBody(double width) {
+    final list = _NotesList(
+      selectionMode: _selectionMode,
+      selectedIds: _selectedIds,
+      onEnterSelection: _enterSelection,
+      onToggleSelection: _toggleSelection,
+    );
+
     if (width < 640) {
-      return const _NotesList();
+      return list;
     }
     if (width < 1024) {
-      // Tablet portrait / medium width: single column with breathing room.
       return Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
-          child: const _NotesList(),
+          child: _NotesList(
+            selectionMode: _selectionMode,
+            selectedIds: _selectedIds,
+            onEnterSelection: _enterSelection,
+            onToggleSelection: _toggleSelection,
+          ),
         ),
       );
     }
@@ -178,19 +630,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: FolderTree(onPicked: (_) {}),
             ),
           ),
-          VerticalDivider(
-            width: 1,
-            color: StrataPalette.outline,
-          ),
+          VerticalDivider(width: 1, color: StrataPalette.outline),
           Expanded(
             child: _NotesList(
+              selectionMode: _selectionMode,
+              selectedIds: _selectedIds,
+              onEnterSelection: _enterSelection,
+              onToggleSelection: _toggleSelection,
               onNoteTap: (context, id) => context.push('/editor/$id'),
             ),
           ),
         ],
       );
     }
-    // Wide screen: folder tree | notes list | editor pane
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -201,23 +653,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: FolderTree(onPicked: (_) {}),
           ),
         ),
-        VerticalDivider(
-          width: 1,
-          color: StrataPalette.outline,
-        ),
+        VerticalDivider(width: 1, color: StrataPalette.outline),
         SizedBox(
           width: 360,
           child: _NotesList(
-            onNoteTap: (ctx, id) {
-              setState(() => _selectedNoteId = id);
-            },
+            selectionMode: _selectionMode,
+            selectedIds: _selectedIds,
+            onEnterSelection: _enterSelection,
+            onToggleSelection: _toggleSelection,
+            onNoteTap: (ctx, id) => setState(() => _selectedNoteId = id),
             selectedNoteId: _selectedNoteId,
           ),
         ),
-        VerticalDivider(
-          width: 1,
-          color: StrataPalette.outline,
-        ),
+        VerticalDivider(width: 1, color: StrataPalette.outline),
         Expanded(
           child: _selectedNoteId != null
               ? EditorScreen(noteId: _selectedNoteId!)
@@ -243,20 +691,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Text('Folders', style: Theme.of(ctx).textTheme.titleLarge),
-                  const Spacer(),
-                  TextButton.icon(
-                    onPressed: () => promptNewFolder(context, ref),
-                    icon: const Icon(
-                      Icons.create_new_folder_outlined,
-                      size: 19,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Row(
+                  children: [
+                    Text(
+                      'Folders',
+                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
                     ),
-                    label: const Text('New'),
-                  ),
-                ],
+                    const Spacer(),
+                    FilledButton.tonalIcon(
+                      onPressed: () => promptNewFolder(context, ref),
+                      icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                      label: const Text('New'),
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 16),
               Expanded(
                 child: SingleChildScrollView(
                   child: FolderTree(onPicked: (_) => Navigator.of(ctx).pop()),
@@ -301,10 +760,21 @@ class _Title extends ConsumerWidget {
 }
 
 class _NotesList extends ConsumerWidget {
-  const _NotesList({this.onNoteTap, this.selectedNoteId});
+  const _NotesList({
+    this.onNoteTap,
+    this.selectedNoteId,
+    this.selectionMode = false,
+    this.selectedIds = const {},
+    this.onEnterSelection,
+    this.onToggleSelection,
+  });
 
   final NoteTapCallback? onNoteTap;
   final int? selectedNoteId;
+  final bool selectionMode;
+  final Set<int> selectedIds;
+  final ValueChanged<int>? onEnterSelection;
+  final ValueChanged<int>? onToggleSelection;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -334,9 +804,15 @@ class _NotesList extends ConsumerWidget {
               note: note,
               index: index,
               selected: note.id == selectedNoteId,
-              onTap: onNoteTap != null
-                  ? () => onNoteTap!(context, note.id)
-                  : () => context.push('/editor/${note.id}'),
+              selectionMode: selectionMode,
+              checked: selectedIds.contains(note.id),
+              onChecked: onToggleSelection != null ? () => onToggleSelection!(note.id) : null,
+              onEnterSelection: onEnterSelection != null ? () => onEnterSelection!(note.id) : null,
+              onTap: selectionMode
+                  ? () => onToggleSelection?.call(note.id)
+                  : (onNoteTap != null
+                      ? () => onNoteTap!(context, note.id)
+                      : () => context.push('/editor/${note.id}')),
             );
 
         return Center(

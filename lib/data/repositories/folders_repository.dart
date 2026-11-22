@@ -46,6 +46,13 @@ class FoldersRepository {
     DataBus.ping();
   }
 
+  Future<void> updateColor(NoteFolder folder, int colorValue) async {
+    folder.colorValue = colorValue;
+    folder.updatedAt = DateTime.now();
+    await _isar.writeTxn(() => _isar.noteFolders.put(folder));
+    DataBus.ping();
+  }
+
   /// Deletes [folder]; its subfolders and notes move up one level to the
   /// deleted folder's parent so nothing is lost.
   Future<void> deletePromotingChildren(int folderId) async {

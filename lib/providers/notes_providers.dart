@@ -109,3 +109,15 @@ final backlinksProvider = StreamProvider.autoDispose.family<List<Note>, int>((
 ) {
   return ref.watch(notesRepositoryProvider).watchBacklinks(noteId);
 });
+
+/// Currently selected note in the 3-pane tablet/desktop layout.
+class SelectedNoteId extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void select(int? id) => state = id;
+}
+
+final selectedNoteIdProvider = NotifierProvider<SelectedNoteId, int?>(
+  SelectedNoteId.new,
+);

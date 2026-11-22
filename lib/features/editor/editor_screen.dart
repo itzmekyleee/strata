@@ -45,9 +45,10 @@ const _wikiScheme = 'strata://note/';
 const _highlightValue = '#4DDEA133';
 
 class EditorScreen extends ConsumerStatefulWidget {
-  const EditorScreen({super.key, required this.noteId});
+  const EditorScreen({super.key, required this.noteId, this.onClose});
 
   final int noteId;
+  final VoidCallback? onClose;
 
   @override
   ConsumerState<EditorScreen> createState() => _EditorScreenState();
@@ -807,9 +808,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     ];
 
     return PopScope(
-        canPop: true,
+        canPop: widget.onClose == null,
         onPopInvokedWithResult: (didPop, _) async {
-          if (didPop) await _flushSave();
+          if (didPop) {
+            await _flushSave();
+            return;
+          }
+          if (widget.onClose != null) {
+            await _flushSave();
+            if (context.mounted) widget.onClose!();
+          }
         },
         child: Scaffold(
         appBar: AppBar(
@@ -824,62 +832,76 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 icon: Icons.arrow_back_ios_new_rounded,
                 onTap: () async {
                   await _flushSave();
-                  if (context.mounted) Navigator.of(context).pop();
+                  if (!context.mounted) return;
+                  if (widget.onClose != null) {
+                    widget.onClose!();
+                  } else {
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Hero(
                   tag: 'note-title-${widget.noteId}',
-                  child: TextField(
-                    controller: _titleCtrl,
-                    onChanged: _onTitleChanged,
-                    maxLines: 1,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Untitled',
-                      hintStyle: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: StrataPalette.onSurfaceDim,
-                      ),
-                      filled: true,
-                      fillColor: StrataPalette.surfaceHighest.withValues(alpha: .5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      isDense: false,
-                    ),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _titleCtrl,
+                    builder: (context, value, _) {
+                      final len = value.text.trim().length;
+                      final fontSize = (15.0 - (len > 20 ? (len - 20) * 0.2 : 0)).clamp(11.0, 15.0);
+                      return SizedBox(
+                        height: 36,
+                        child: TextField(
+                          controller: _titleCtrl,
+                          onChanged: _onTitleChanged,
+                          maxLines: 1,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                fontSize: fontSize,
+                              ),
+                          decoration: InputDecoration(
+                            hintText: 'Untitled',
+                            hintStyle: TextStyle(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w500,
+                              color: StrataPalette.onSurfaceDim,
+                            ),
+                            filled: true,
+                            fillColor: StrataPalette.surfaceHighest.withValues(alpha: .35),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            isDense: true,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
             ],
           ),
           actions: [
+            const SizedBox(width: 12),
             _EditorIconButton(
               icon: Icons.search_rounded,
               isActive: _searchActive,
               onTap: _toggleSearch,
             ),
-            const SizedBox(width: 2),
+            const SizedBox(width: 4),
             _EditorIconButton(
               icon: Icons.more_vert_rounded,
               onTap: () => _showActionsMenu(context, controller),

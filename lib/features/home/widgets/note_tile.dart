@@ -21,6 +21,10 @@ class NoteTile extends ConsumerWidget {
     this.onTap,
     this.selected = false,
     this.highlightQuery = '',
+    this.selectionMode = false,
+    this.checked = false,
+    this.onChecked,
+    this.onEnterSelection,
   });
 
   final Note note;
@@ -28,6 +32,10 @@ class NoteTile extends ConsumerWidget {
   final VoidCallback? onTap;
   final bool selected;
   final String highlightQuery;
+  final bool selectionMode;
+  final bool checked;
+  final VoidCallback? onChecked;
+  final VoidCallback? onEnterSelection;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -84,8 +92,10 @@ class NoteTile extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(16),
                 splashColor: StrataPalette.accent.withValues(alpha: .08),
                 highlightColor: StrataPalette.accent.withValues(alpha: .04),
-                onTap: onTap ?? () => context.push('/editor/${note.id}'),
-                onLongPress: () => showNoteActionsSheet(context, note),
+                onTap: selectionMode ? onChecked : (onTap ?? () => context.push('/editor/${note.id}')),
+                onLongPress: selectionMode
+                    ? onChecked
+                    : (onEnterSelection ?? () => showNoteActionsSheet(context, note)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -96,6 +106,26 @@ class NoteTile extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
+                        if (selectionMode) ...[
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOutCubic,
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: checked ? StrataPalette.accent : Colors.transparent,
+                              border: Border.all(
+                                color: checked ? StrataPalette.accent : StrataPalette.onSurfaceMuted.withValues(alpha: .5),
+                                width: 1.8,
+                              ),
+                            ),
+                            child: checked
+                                ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                        ],
                         Expanded(
                           child: Hero(
                             tag: 'note-title-${note.id}',

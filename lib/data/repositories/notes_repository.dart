@@ -45,14 +45,27 @@ class NotesRepository {
           return [...withDue, ...rest];
         case NoteSort.titleAsc:
           final all = await q.findAll();
-          all.sort((a, b) => a.title
-              .toLowerCase()
-              .compareTo(b.title.toLowerCase()));
+          all.sort((a, b) => _naturalCompare(a.title, b.title));
           return all;
       }
     }
 
     return watchLive(changes: _changes, snapshot: snapshot);
+  }
+
+  static int _naturalCompare(String a, String b) {
+    final regex = RegExp(r'(\d+)|(\D+)');
+    final aParts = regex.allMatches(a.toLowerCase()).map((m) => m.group(0)!).toList();
+    final bParts = regex.allMatches(b.toLowerCase()).map((m) => m.group(0)!).toList();
+    for (var i = 0; i < aParts.length && i < bParts.length; i++) {
+      final aNum = int.tryParse(aParts[i]);
+      final bNum = int.tryParse(bParts[i]);
+      final cmp = (aNum != null && bNum != null)
+          ? aNum.compareTo(bNum)
+          : aParts[i].compareTo(bParts[i]);
+      if (cmp != 0) return cmp;
+    }
+    return aParts.length.compareTo(bParts.length);
   }
 
   /// All non-trashed, non-template notes across every folder.

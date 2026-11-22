@@ -9,6 +9,12 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/strata_palette.dart';
 import '../../app/theme/theme_variant.dart';
 import '../../core/widgets/global_shortcuts.dart';
+import '../../providers/core_providers.dart';
+import '../../providers/folder_counts.dart';
+import '../../providers/notes_providers.dart';
+import '../editor/editor_screen.dart';
+import '../home/widgets/folder_tree.dart';
+import '../templates/template_picker_sheet.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
@@ -42,7 +48,13 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the theme so navigation colors refresh immediately on theme changes.
     ref.watch(themeVariantProvider);
-    final width = MediaQuery.sizeOf(context).width;
+    final size = MediaQuery.sizeOf(context);
+    final width = size.width;
+    final isLandscape = size.width > size.height;
+
+    if (width >= 1100 && isLandscape) {
+      return _TabletLandscapeShell(shell: shell);
+    }
 
     if (width < 640) {
       return _ScaffoldBase(
@@ -154,80 +166,187 @@ class _SectionTransitionState extends State<_SectionTransition> {
 }
 
 // ---------------------------------------------------------------------------
-// Mobile: bottom navigation with sliding indicator
+// Mobile: floating bottom navigation with sliding indicator and create button
 // ---------------------------------------------------------------------------
-class _MobileTabBar extends StatelessWidget {
+class _MobileTabBar extends ConsumerWidget {
   const _MobileTabBar({required this.shell});
 
   final StatefulNavigationShell shell;
 
+  static int _visualSlotForBranch(int branch) {
+    return switch (branch) {
+      0 => 0,
+      1 => 1,
+      2 => 3,
+      3 => 4,
+      _ => 0,
+    };
+  }
+
+  Future<void> _createNote(BuildContext context, WidgetRef ref) async {
+    HapticFeedback.mediumImpact();
+    final folderId = ref.read(selectedFolderProvider);
+    final choice = await showTemplatePickerSheet(context, ref);
+    if (choice == null || !context.mounted) return;
+    final note = await ref.read(noteActionsProvider).createNote(
+          folderId: folderId,
+          title: choice.title,
+          contentDelta: choice.deltaJson,
+        );
+    if (!context.mounted) return;
+    final isThreePane = MediaQuery.sizeOf(context).width >= 1100 &&
+        MediaQuery.sizeOf(context).width > MediaQuery.sizeOf(context).height;
+    if (isThreePane) {
+      ref.read(selectedNoteIdProvider.notifier).select(note.id);
+    } else {
+      await context.push('/editor/${note.id}');
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final count = AppShell._destinations.length;
-    final index = shell.currentIndex;
+    final branch = shell.currentIndex;
+    final visualSlot = _visualSlotForBranch(branch);
+    const slotCount = 5;
 
     return SafeArea(
       top: false,
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: StrataPalette.surface.withValues(
-                alpha: isDark ? .72 : .82,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Container(
+              height: 68,
+              decoration: BoxDecoration(
+                color: StrataPalette.surface.withValues(alpha: isDark ? .78 : .88),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: StrataPalette.outlineStrong, width: .7),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? .22 : .08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              border: Border(
-                top: BorderSide(color: StrataPalette.outlineStrong, width: .5),
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final itemWidth = constraints.maxWidth / count;
-                const indicatorWidth = 56.0;
-                const indicatorHeight = 36.0;
-                final indicatorLeft =
-                    index * itemWidth + (itemWidth - indicatorWidth) / 2;
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final itemWidth = constraints.maxWidth / slotCount;
+                  const indicatorWidth = 52.0;
+                  const indicatorHeight = 52.0;
+                  final indicatorLeft =
+                      visualSlot * itemWidth + (itemWidth - indicatorWidth) / 2;
 
-                return SizedBox(
-                  height: 58,
-                  child: Stack(
+                  return Stack(
                     children: [
                       AnimatedPositioned(
                         duration: const Duration(milliseconds: 320),
                         curve: Curves.easeOutCubic,
                         left: indicatorLeft,
-                        top: 2,
+                        top: (constraints.maxHeight - indicatorHeight) / 2,
                         width: indicatorWidth,
                         height: indicatorHeight,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             color: StrataPalette.accent.withValues(alpha: .14),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                       ),
                       Row(
                         children: [
-                          for (var i = 0; i < count; i++)
-                            Expanded(
-                              child: _MobileTabItem(
-                                shell: shell,
-                                index: i,
-                                icon: AppShell._destinations[i].$1,
-                                activeIcon: AppShell._destinations[i].$2,
-                                label: AppShell._destinations[i].$3,
-                                selected: index == i,
-                              ),
+                          Expanded(
+                            child: _MobileTabItem(
+                              shell: shell,
+                              index: 0,
+                              icon: AppShell._destinations[0].$1,
+                              activeIcon: AppShell._destinations[0].$2,
+                              label: AppShell._destinations[0].$3,
+                              selected: branch == 0,
                             ),
+                          ),
+                          Expanded(
+                            child: _MobileTabItem(
+                              shell: shell,
+                              index: 1,
+                              icon: AppShell._destinations[1].$1,
+                              activeIcon: AppShell._destinations[1].$2,
+                              label: AppShell._destinations[1].$3,
+                              selected: branch == 1,
+                            ),
+                          ),
+                          Expanded(
+                            child: _MobileCreateButton(
+                              onTap: () => _createNote(context, ref),
+                            ),
+                          ),
+                          Expanded(
+                            child: _MobileTabItem(
+                              shell: shell,
+                              index: 2,
+                              icon: AppShell._destinations[2].$1,
+                              activeIcon: AppShell._destinations[2].$2,
+                              label: AppShell._destinations[2].$3,
+                              selected: branch == 2,
+                            ),
+                          ),
+                          Expanded(
+                            child: _MobileTabItem(
+                              shell: shell,
+                              index: 3,
+                              icon: AppShell._destinations[3].$1,
+                              activeIcon: AppShell._destinations[3].$2,
+                              label: AppShell._destinations[3].$3,
+                              selected: branch == 3,
+                            ),
+                          ),
                         ],
                       ),
                     ],
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileCreateButton extends StatelessWidget {
+  const _MobileCreateButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Create note',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Center(
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: StrataPalette.accent,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: StrataPalette.accent.withValues(alpha: .35),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
           ),
         ),
       ),
@@ -276,16 +395,16 @@ class _MobileTabItem extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 child: Icon(
                   selected ? activeIcon : icon,
-                  size: 24,
+                  size: 22,
                   color: color,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   letterSpacing: .1,
                   color: color,
@@ -654,6 +773,396 @@ class _BrandMark extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Tablet landscape: 3-pane layout (20% nav / 30% list / 50% editor)
+// ---------------------------------------------------------------------------
+class _TabletLandscapeShell extends ConsumerStatefulWidget {
+  const _TabletLandscapeShell({required this.shell});
+
+  final StatefulNavigationShell shell;
+
+  @override
+  ConsumerState<_TabletLandscapeShell> createState() => _TabletLandscapeShellState();
+}
+
+class _TabletLandscapeShellState extends ConsumerState<_TabletLandscapeShell> {
+  bool _editorExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedNoteId = ref.watch(selectedNoteIdProvider);
+    final shell = widget.shell;
+
+    if (_editorExpanded && selectedNoteId == null) {
+      _editorExpanded = false;
+    }
+
+    return GlobalShortcuts(
+      child: Scaffold(
+        body: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(-.2, -1.1),
+              radius: 1.35,
+              colors: [StrataPalette.glow, StrataPalette.background],
+              stops: const [0, .5],
+            ),
+          ),
+          child: Row(
+            children: [
+              if (!_editorExpanded) ...[
+                Expanded(
+                  flex: 20,
+                  child: _LeftNavPane(shell: shell),
+                ),
+                VerticalDivider(width: 1, color: StrataPalette.outline),
+              ],
+              if (shell.currentIndex == 3)
+                Expanded(
+                  flex: _editorExpanded ? 100 : 80,
+                  child: _MiddlePane(shell: shell),
+                )
+              else ...[
+                if (!_editorExpanded) ...[
+                  Expanded(
+                    flex: 30,
+                    child: _MiddlePane(shell: shell),
+                  ),
+                  VerticalDivider(width: 1, color: StrataPalette.outline),
+                ],
+                Expanded(
+                  flex: _editorExpanded ? 100 : 50,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: selectedNoteId != null
+                            ? EditorScreen(
+                                key: ValueKey('editor-$selectedNoteId'),
+                                noteId: selectedNoteId,
+                                onClose: () {
+                                  ref.read(selectedNoteIdProvider.notifier).select(null);
+                                  setState(() => _editorExpanded = false);
+                                },
+                              )
+                            : const _EditorPlaceholderPane(),
+                      ),
+                      if (selectedNoteId != null)
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: SafeArea(
+                            child: Material(
+                              color: StrataPalette.surface.withValues(alpha: .85),
+                              borderRadius: BorderRadius.circular(10),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(10),
+                                onTap: () => setState(() => _editorExpanded = !_editorExpanded),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Icon(
+                                    _editorExpanded
+                                        ? Icons.close_fullscreen_rounded
+                                        : Icons.open_in_full_rounded,
+                                    size: 18,
+                                    color: StrataPalette.onSurfaceMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LeftNavPane extends ConsumerWidget {
+  const _LeftNavPane({required this.shell});
+
+  final StatefulNavigationShell shell;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final counts = ref.watch(folderNoteCountProvider).value ?? const <int?, int>{};
+    final allCount = counts.values.fold<int>(0, (a, b) => a + b);
+    final plannedCount = ref.watch(plannedNotesProvider).value?.length ?? 0;
+    final trashCount = ref.watch(trashStreamProvider).value?.length ?? 0;
+
+    return Container(
+      color: StrataPalette.surface.withValues(alpha: .55),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _BrandMark(showName: true),
+              const SizedBox(height: 18),
+              _LeftSearchField(
+                onTap: () {
+                  ref.read(searchToggleProvider.notifier).set(true);
+                  shell.goBranch(0, initialLocation: shell.currentIndex == 0);
+                },
+              ),
+              const SizedBox(height: 20),
+              _NavRow(
+                icon: Icons.sticky_note_2_outlined,
+                activeIcon: Icons.sticky_note_2_rounded,
+                label: 'All Notes',
+                count: allCount,
+                selected: shell.currentIndex == 0,
+                onTap: () {
+                  ref.read(selectedFolderProvider.notifier).select(null);
+                  shell.goBranch(0, initialLocation: shell.currentIndex == 0);
+                },
+              ),
+              const SizedBox(height: 4),
+              _NavRow(
+                icon: Icons.event_note_outlined,
+                activeIcon: Icons.event_note_rounded,
+                label: 'Planned',
+                count: plannedCount,
+                selected: shell.currentIndex == 1,
+                onTap: () => shell.goBranch(1, initialLocation: shell.currentIndex == 1),
+              ),
+              const SizedBox(height: 4),
+              _NavRow(
+                icon: Icons.delete_outline_rounded,
+                activeIcon: Icons.delete_rounded,
+                label: 'Trash',
+                count: trashCount,
+                selected: shell.currentIndex == 2,
+                onTap: () => shell.goBranch(2, initialLocation: shell.currentIndex == 2),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'FOLDERS',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        letterSpacing: 1.2,
+                        color: StrataPalette.onSurfaceMuted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'New folder',
+                    visualDensity: VisualDensity.compact,
+                    iconSize: 18,
+                    onPressed: () => promptNewFolder(context, ref),
+                    icon: const Icon(Icons.create_new_folder_outlined),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: FolderTree(
+                    showAllNotesRow: false,
+                    onPicked: (_) {
+                      if (shell.currentIndex != 0) {
+                        shell.goBranch(0);
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _NavRow(
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings_rounded,
+                label: 'Settings',
+                selected: shell.currentIndex == 3,
+                compact: true,
+                onTap: () => shell.goBranch(3, initialLocation: shell.currentIndex == 3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LeftSearchField extends StatelessWidget {
+  const _LeftSearchField({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: StrataPalette.surfaceHigh.withValues(alpha: .75),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          child: Row(
+            children: [
+              Icon(Icons.search_rounded, size: 18, color: StrataPalette.onSurfaceMuted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Search notes...',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: StrataPalette.onSurfaceMuted,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavRow extends StatelessWidget {
+  const _NavRow({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.count,
+    this.compact = false,
+  });
+
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final int? count;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? StrataPalette.accent : StrataPalette.onSurfaceMuted;
+    final fg = selected ? StrataPalette.accent : StrataPalette.onBackground;
+    return Material(
+      color: selected ? StrataPalette.accent.withValues(alpha: .1) : Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 7),
+          child: Row(
+            children: [
+              const SizedBox(width: 22),
+              Icon(selected ? activeIcon : icon, size: 18, color: color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: fg,
+                  ),
+                ),
+              ),
+              if (count != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? StrataPalette.accent.withValues(alpha: .14)
+                        : StrataPalette.surfaceHighest.withValues(alpha: .8),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? StrataPalette.accent : StrataPalette.onSurfaceMuted,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiddlePane extends ConsumerWidget {
+  const _MiddlePane({required this.shell});
+
+  final StatefulNavigationShell shell;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // The active branch screen renders in the middle pane.
+    // HomeScreen/Planned/Trash/Settings already have their own scaffold.
+    // We wrap in a ClipRect to keep it clean.
+    return ClipRect(
+      child: Material(
+        color: StrataPalette.background.withValues(alpha: .35),
+        child: shell,
+      ),
+    );
+  }
+}
+
+class _EditorPlaceholderPane extends StatelessWidget {
+  const _EditorPlaceholderPane();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.edit_note_rounded,
+              size: 56,
+              color: StrataPalette.onSurfaceMuted.withValues(alpha: .35),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Select a note to view',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: StrataPalette.onSurfaceMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Choose a note from the list to open it here.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: StrataPalette.onSurfaceMuted.withValues(alpha: .8),
+                  ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

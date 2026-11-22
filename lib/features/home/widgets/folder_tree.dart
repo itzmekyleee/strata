@@ -21,10 +21,16 @@ final selectedFolderProvider = NotifierProvider<SelectedFolder, int?>(
 );
 
 class FolderTree extends ConsumerStatefulWidget {
-  const FolderTree({super.key, this.onPicked, this.compact = false});
+  const FolderTree({
+    super.key,
+    this.onPicked,
+    this.compact = false,
+    this.showAllNotesRow = true,
+  });
 
   final ValueChanged<NoteFolder?>? onPicked;
   final bool compact;
+  final bool showAllNotesRow;
 
   @override
   ConsumerState<FolderTree> createState() => _FolderTreeState();
@@ -46,20 +52,21 @@ class _FolderTreeState extends ConsumerState<FolderTree> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Row(
-          label: 'All notes',
-          icon: Icons.folder_copy_outlined,
-          depth: 0,
-          compact: widget.compact,
-          selected: selected == null,
-          count: counts[null],
-          onTap: () {
-            ref.read(selectedFolderProvider.notifier).select(null);
-            widget.onPicked?.call(null);
-          },
-        ),
+        if (widget.showAllNotesRow)
+          _Row(
+            label: 'All notes',
+            icon: Icons.folder_copy_outlined,
+            depth: 0,
+            compact: widget.compact,
+            selected: selected == null,
+            count: counts[null],
+            onTap: () {
+              ref.read(selectedFolderProvider.notifier).select(null);
+              widget.onPicked?.call(null);
+            },
+          ),
         for (final root in byParent[null] ?? const <NoteFolder>[])
-          _node(context, root, byParent, 1, selected, counts),
+          _node(context, root, byParent, widget.showAllNotesRow ? 1 : 0, selected, counts),
       ],
     );
   }
@@ -140,6 +147,58 @@ class _FolderTreeState extends ConsumerState<FolderTree> {
           await folders.rename(folder, name.trim());
         }
         controller.dispose();
+      case 'color':
+        final picked = await showDialog<int>(
+          context: context,
+          builder: (ctx) {
+            const colors = <int>[
+              0xFF5B5BD6, // purple
+              0xFF3B82F6, // blue
+              0xFF14B8A6, // teal
+              0xFF22C55E, // green
+              0xFFF59E0B, // amber
+              0xFFEF4444, // red
+              0xFFEC4899, // pink
+              0xFF8B5CF6, // violet
+            ];
+            return AlertDialog(
+              title: const Text('Folder color'),
+              content: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final c in colors)
+                    GestureDetector(
+                      onTap: () => Navigator.of(ctx).pop(c),
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Color(c),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: folder.colorValue == c
+                                ? Theme.of(ctx).colorScheme.onSurface
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: folder.colorValue == c
+                            ? const Icon(Icons.check, size: 18, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+              ],
+            );
+          },
+        );
+        if (picked != null) {
+          await folders.updateColor(folder, picked);
+        }
       case 'delete':
         await folders.deletePromotingChildren(folder.id);
         ref.read(selectedFolderProvider.notifier).select(null);
@@ -249,27 +308,29 @@ class _Row extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
             child: Row(
               children: [
-                if (hasChildren)
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onToggle,
-                    child: AnimatedRotation(
-                      turns: expanded ? .25 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                else
-                  const SizedBox(width: 16),
-                Icon(icon, size: 17, color: color ?? theme.colorScheme.primary),
-                const SizedBox(width: 8),
+                SizedBox(
+                  width: 22,
+                  child: hasChildren
+                      ? GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onToggle,
+                          child: AnimatedRotation(
+                            turns: expanded ? .25 : 0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Icon(
+                              Icons.chevron_right_rounded,
+                              size: 18,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                Icon(icon, size: 18, color: color ?? theme.colorScheme.primary),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     label,
@@ -321,6 +382,11 @@ class _Row extends StatelessWidget {
                         value: 'rename',
                         icon: Icons.drive_file_rename_outline_rounded,
                         label: 'Rename',
+                      ),
+                      strataPopupItem(
+                        value: 'color',
+                        icon: Icons.palette_outlined,
+                        label: 'Change color',
                       ),
                       strataPopupItem(
                         value: 'delete',
