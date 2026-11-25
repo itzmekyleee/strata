@@ -20,26 +20,10 @@ class AppShell extends ConsumerWidget {
   final StatefulNavigationShell shell;
 
   static const _destinations = [
-    (
-      Icons.sticky_note_2_outlined,
-      Icons.sticky_note_2_rounded,
-      'Notes',
-    ),
-    (
-      Icons.event_note_outlined,
-      Icons.event_note_rounded,
-      'Planned',
-    ),
-    (
-      Icons.delete_outline_rounded,
-      Icons.delete_rounded,
-      'Trash',
-    ),
-    (
-      Icons.settings_outlined,
-      Icons.settings_rounded,
-      'Settings',
-    ),
+    (Icons.sticky_note_2_outlined, Icons.sticky_note_2_rounded, 'Notes'),
+    (Icons.event_note_outlined, Icons.event_note_rounded, 'Planned'),
+    (Icons.delete_outline_rounded, Icons.delete_rounded, 'Trash'),
+    (Icons.settings_outlined, Icons.settings_rounded, 'Settings'),
   ];
 
   @override
@@ -187,13 +171,16 @@ class _MobileTabBar extends ConsumerWidget {
     final folderId = ref.read(selectedFolderProvider);
     final choice = await showTemplatePickerSheet(context, ref);
     if (choice == null || !context.mounted) return;
-    final note = await ref.read(noteActionsProvider).createNote(
+    final note = await ref
+        .read(noteActionsProvider)
+        .createNote(
           folderId: folderId,
           title: choice.title,
           contentDelta: choice.deltaJson,
         );
     if (!context.mounted) return;
-    final isThreePane = MediaQuery.sizeOf(context).width >= 1100 &&
+    final isThreePane =
+        MediaQuery.sizeOf(context).width >= 1100 &&
         MediaQuery.sizeOf(context).width > MediaQuery.sizeOf(context).height;
     if (isThreePane) {
       ref.read(selectedNoteIdProvider.notifier).select(note.id);
@@ -218,98 +205,98 @@ class _MobileTabBar extends ConsumerWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: StrataPalette.outlineStrong.withValues(alpha: .35),
-              width: .7,
+              color: StrataPalette.outlineStrong.withValues(alpha: .16),
+              width: .6,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: .16),
-                blurRadius: 22,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: .06),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final itemWidth = constraints.maxWidth / slotCount;
-                  const indicatorWidth = 52.0;
-                  const indicatorHeight = 52.0;
-                  final indicatorLeft =
-                      visualSlot * itemWidth + (itemWidth - indicatorWidth) / 2;
+            builder: (context, constraints) {
+              final itemWidth = constraints.maxWidth / slotCount;
+              const indicatorWidth = 52.0;
+              const indicatorHeight = 52.0;
+              final indicatorLeft =
+                  visualSlot * itemWidth + (itemWidth - indicatorWidth) / 2;
 
-                  return Stack(
+              return Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                    left: indicatorLeft,
+                    top: (constraints.maxHeight - indicatorHeight) / 2,
+                    width: indicatorWidth,
+                    height: indicatorHeight,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: StrataPalette.accent.withValues(alpha: .14),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  Row(
                     children: [
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 320),
-                        curve: Curves.easeOutCubic,
-                        left: indicatorLeft,
-                        top: (constraints.maxHeight - indicatorHeight) / 2,
-                        width: indicatorWidth,
-                        height: indicatorHeight,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: StrataPalette.accent.withValues(alpha: .14),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                      Expanded(
+                        child: _MobileTabItem(
+                          shell: shell,
+                          index: 0,
+                          icon: AppShell._destinations[0].$1,
+                          activeIcon: AppShell._destinations[0].$2,
+                          label: AppShell._destinations[0].$3,
+                          selected: branch == 0,
                         ),
                       ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _MobileTabItem(
-                              shell: shell,
-                              index: 0,
-                              icon: AppShell._destinations[0].$1,
-                              activeIcon: AppShell._destinations[0].$2,
-                              label: AppShell._destinations[0].$3,
-                              selected: branch == 0,
-                            ),
-                          ),
-                          Expanded(
-                            child: _MobileTabItem(
-                              shell: shell,
-                              index: 1,
-                              icon: AppShell._destinations[1].$1,
-                              activeIcon: AppShell._destinations[1].$2,
-                              label: AppShell._destinations[1].$3,
-                              selected: branch == 1,
-                            ),
-                          ),
-                          Expanded(
-                            child: _MobileCreateButton(
-                              onTap: () => _createNote(context, ref),
-                            ),
-                          ),
-                          Expanded(
-                            child: _MobileTabItem(
-                              shell: shell,
-                              index: 2,
-                              icon: AppShell._destinations[2].$1,
-                              activeIcon: AppShell._destinations[2].$2,
-                              label: AppShell._destinations[2].$3,
-                              selected: branch == 2,
-                            ),
-                          ),
-                          Expanded(
-                            child: _MobileTabItem(
-                              shell: shell,
-                              index: 3,
-                              icon: AppShell._destinations[3].$1,
-                              activeIcon: AppShell._destinations[3].$2,
-                              label: AppShell._destinations[3].$3,
-                              selected: branch == 3,
-                            ),
-                          ),
-                        ],
+                      Expanded(
+                        child: _MobileTabItem(
+                          shell: shell,
+                          index: 1,
+                          icon: AppShell._destinations[1].$1,
+                          activeIcon: AppShell._destinations[1].$2,
+                          label: AppShell._destinations[1].$3,
+                          selected: branch == 1,
+                        ),
+                      ),
+                      Expanded(
+                        child: _MobileCreateButton(
+                          onTap: () => _createNote(context, ref),
+                        ),
+                      ),
+                      Expanded(
+                        child: _MobileTabItem(
+                          shell: shell,
+                          index: 2,
+                          icon: AppShell._destinations[2].$1,
+                          activeIcon: AppShell._destinations[2].$2,
+                          label: AppShell._destinations[2].$3,
+                          selected: branch == 2,
+                        ),
+                      ),
+                      Expanded(
+                        child: _MobileTabItem(
+                          shell: shell,
+                          index: 3,
+                          icon: AppShell._destinations[3].$1,
+                          activeIcon: AppShell._destinations[3].$2,
+                          label: AppShell._destinations[3].$3,
+                          selected: branch == 3,
+                        ),
                       ),
                     ],
-                  );
-                },
-              ),
-            ),
+                  ),
+                ],
+              );
+            },
           ),
-        );
+        ),
+      ),
+    );
   }
 }
 
@@ -368,7 +355,9 @@ class _MobileTabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? StrataPalette.accent : StrataPalette.onSurfaceMuted;
+    final color = selected
+        ? StrataPalette.accent
+        : StrataPalette.onSurfaceMuted;
     return Semantics(
       selected: selected,
       button: true,
@@ -404,7 +393,11 @@ class _MobileTabItem extends StatelessWidget {
                   letterSpacing: .1,
                   color: color,
                 ),
-                child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -435,9 +428,7 @@ class _TabletRail extends StatelessWidget {
       width: 92,
       decoration: BoxDecoration(
         color: StrataPalette.surface.withValues(alpha: .56),
-        border: Border(
-          right: BorderSide(color: StrataPalette.outline),
-        ),
+        border: Border(right: BorderSide(color: StrataPalette.outline)),
       ),
       child: Column(
         children: [
@@ -453,7 +444,8 @@ class _TabletRail extends StatelessWidget {
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 320),
                     curve: Curves.easeOutCubic,
-                    top: index * itemHeight + (itemHeight - indicatorHeight) / 2,
+                    top:
+                        index * itemHeight + (itemHeight - indicatorHeight) / 2,
                     left: (64 - indicatorWidth) / 2,
                     width: indicatorWidth,
                     height: indicatorHeight,
@@ -490,9 +482,9 @@ class _TabletRail extends StatelessWidget {
             child: Text(
               'v1.0',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: StrataPalette.onSurfaceMuted.withValues(alpha: .7),
-                    fontSize: 10,
-                  ),
+                color: StrataPalette.onSurfaceMuted.withValues(alpha: .7),
+                fontSize: 10,
+              ),
             ),
           ),
         ],
@@ -520,7 +512,9 @@ class _RailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? StrataPalette.accent : StrataPalette.onSurfaceMuted;
+    final color = selected
+        ? StrataPalette.accent
+        : StrataPalette.onSurfaceMuted;
     return Semantics(
       selected: selected,
       button: true,
@@ -539,7 +533,11 @@ class _RailItem extends StatelessWidget {
                 scale: selected ? 1.0 : .96,
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
-                child: Icon(selected ? activeIcon : icon, size: 24, color: color),
+                child: Icon(
+                  selected ? activeIcon : icon,
+                  size: 24,
+                  color: color,
+                ),
               ),
               const SizedBox(height: 6),
               AnimatedDefaultTextStyle(
@@ -550,7 +548,11 @@ class _RailItem extends StatelessWidget {
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: color,
                 ),
-                child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -581,9 +583,7 @@ class _DesktopSidebar extends StatelessWidget {
       width: 244,
       decoration: BoxDecoration(
         color: StrataPalette.surface.withValues(alpha: .58),
-        border: Border(
-          right: BorderSide(color: StrataPalette.outline),
-        ),
+        border: Border(right: BorderSide(color: StrataPalette.outline)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -599,10 +599,10 @@ class _DesktopSidebar extends StatelessWidget {
             child: Text(
               'LIBRARY',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                    color: StrataPalette.onSurfaceMuted,
-                  ),
+                fontSize: 10,
+                letterSpacing: 1.2,
+                color: StrataPalette.onSurfaceMuted,
+              ),
             ),
           ),
           Padding(
@@ -614,7 +614,9 @@ class _DesktopSidebar extends StatelessWidget {
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 320),
                     curve: Curves.easeOutCubic,
-                    top: index * (itemHeight + itemGap) + (itemHeight - indicatorHeight) / 2,
+                    top:
+                        index * (itemHeight + itemGap) +
+                        (itemHeight - indicatorHeight) / 2,
                     left: 0,
                     right: 0,
                     height: indicatorHeight,
@@ -656,11 +658,11 @@ class _DesktopSidebar extends StatelessWidget {
             child: Text(
               'v1.0.0 · local-first',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: .3,
-                    color: StrataPalette.onSurfaceMuted.withValues(alpha: .7),
-                  ),
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                letterSpacing: .3,
+                color: StrataPalette.onSurfaceMuted.withValues(alpha: .7),
+              ),
             ),
           ),
         ],
@@ -688,7 +690,9 @@ class _SideItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? StrataPalette.accent : StrataPalette.onSurfaceMuted;
+    final color = selected
+        ? StrataPalette.accent
+        : StrataPalette.onSurfaceMuted;
     return Semantics(
       selected: selected,
       button: true,
@@ -707,7 +711,11 @@ class _SideItem extends StatelessWidget {
                 scale: selected ? 1.0 : .96,
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
-                child: Icon(selected ? activeIcon : icon, size: 20, color: color),
+                child: Icon(
+                  selected ? activeIcon : icon,
+                  size: 20,
+                  color: color,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -720,7 +728,11 @@ class _SideItem extends StatelessWidget {
                     letterSpacing: .1,
                     color: color,
                   ),
-                  child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],
@@ -763,15 +775,14 @@ class _BrandMark extends StatelessWidget {
         const SizedBox(width: 11),
         Text(
           'Strata',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
       ],
     );
   }
 }
-
 
 // ---------------------------------------------------------------------------
 // Tablet landscape: 3-pane layout (20% nav / 30% list / 50% editor)
@@ -782,7 +793,8 @@ class _TabletLandscapeShell extends ConsumerStatefulWidget {
   final StatefulNavigationShell shell;
 
   @override
-  ConsumerState<_TabletLandscapeShell> createState() => _TabletLandscapeShellState();
+  ConsumerState<_TabletLandscapeShell> createState() =>
+      _TabletLandscapeShellState();
 }
 
 class _TabletLandscapeShellState extends ConsumerState<_TabletLandscapeShell> {
@@ -811,23 +823,17 @@ class _TabletLandscapeShellState extends ConsumerState<_TabletLandscapeShell> {
           child: Row(
             children: [
               if (!_editorExpanded) ...[
-                Expanded(
-                  flex: 20,
-                  child: _LeftNavPane(shell: shell),
-                ),
+                Expanded(flex: 22, child: _LeftNavPane(shell: shell)),
                 VerticalDivider(width: 1, color: StrataPalette.outline),
               ],
               if (shell.currentIndex == 3)
                 Expanded(
-                  flex: _editorExpanded ? 100 : 80,
+                  flex: _editorExpanded ? 100 : 78,
                   child: _MiddlePane(shell: shell),
                 )
               else ...[
                 if (!_editorExpanded) ...[
-                  Expanded(
-                    flex: 30,
-                    child: _MiddlePane(shell: shell),
-                  ),
+                  Expanded(flex: 28, child: _MiddlePane(shell: shell)),
                   VerticalDivider(width: 1, color: StrataPalette.outline),
                 ],
                 Expanded(
@@ -840,7 +846,9 @@ class _TabletLandscapeShellState extends ConsumerState<_TabletLandscapeShell> {
                                 key: ValueKey('editor-$selectedNoteId'),
                                 noteId: selectedNoteId,
                                 onClose: () {
-                                  ref.read(selectedNoteIdProvider.notifier).select(null);
+                                  ref
+                                      .read(selectedNoteIdProvider.notifier)
+                                      .select(null);
                                   setState(() => _editorExpanded = false);
                                 },
                               )
@@ -852,11 +860,15 @@ class _TabletLandscapeShellState extends ConsumerState<_TabletLandscapeShell> {
                           right: 12,
                           child: SafeArea(
                             child: Material(
-                              color: StrataPalette.surface.withValues(alpha: .85),
+                              color: StrataPalette.surface.withValues(
+                                alpha: .85,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(10),
-                                onTap: () => setState(() => _editorExpanded = !_editorExpanded),
+                                onTap: () => setState(
+                                  () => _editorExpanded = !_editorExpanded,
+                                ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: Icon(
@@ -891,7 +903,8 @@ class _LeftNavPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final counts = ref.watch(folderNoteCountProvider).value ?? const <int?, int>{};
+    final counts =
+        ref.watch(folderNoteCountProvider).value ?? const <int?, int>{};
     final allCount = counts.values.fold<int>(0, (a, b) => a + b);
     final plannedCount = ref.watch(plannedNotesProvider).value?.length ?? 0;
     final trashCount = ref.watch(trashStreamProvider).value?.length ?? 0;
@@ -931,7 +944,8 @@ class _LeftNavPane extends ConsumerWidget {
                 label: 'Planned',
                 count: plannedCount,
                 selected: shell.currentIndex == 1,
-                onTap: () => shell.goBranch(1, initialLocation: shell.currentIndex == 1),
+                onTap: () =>
+                    shell.goBranch(1, initialLocation: shell.currentIndex == 1),
               ),
               const SizedBox(height: 4),
               _NavRow(
@@ -940,7 +954,8 @@ class _LeftNavPane extends ConsumerWidget {
                 label: 'Trash',
                 count: trashCount,
                 selected: shell.currentIndex == 2,
-                onTap: () => shell.goBranch(2, initialLocation: shell.currentIndex == 2),
+                onTap: () =>
+                    shell.goBranch(2, initialLocation: shell.currentIndex == 2),
               ),
               const SizedBox(height: 18),
               Padding(
@@ -995,7 +1010,8 @@ class _LeftNavPane extends ConsumerWidget {
                 label: 'Settings',
                 selected: shell.currentIndex == 3,
                 compact: true,
-                onTap: () => shell.goBranch(3, initialLocation: shell.currentIndex == 3),
+                onTap: () =>
+                    shell.goBranch(3, initialLocation: shell.currentIndex == 3),
               ),
             ],
           ),
@@ -1022,14 +1038,18 @@ class _LeftSearchField extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           child: Row(
             children: [
-              Icon(Icons.search_rounded, size: 18, color: StrataPalette.onSurfaceMuted),
+              Icon(
+                Icons.search_rounded,
+                size: 18,
+                color: StrataPalette.onSurfaceMuted,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Search notes...',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: StrataPalette.onSurfaceMuted,
-                      ),
+                    color: StrataPalette.onSurfaceMuted,
+                  ),
                 ),
               ),
             ],
@@ -1061,10 +1081,14 @@ class _NavRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? StrataPalette.accent : StrataPalette.onSurfaceMuted;
+    final color = selected
+        ? StrataPalette.accent
+        : StrataPalette.onSurfaceMuted;
     final fg = selected ? StrataPalette.accent : StrataPalette.onBackground;
     return Material(
-      color: selected ? StrataPalette.accent.withValues(alpha: .1) : Colors.transparent,
+      color: selected
+          ? StrataPalette.accent.withValues(alpha: .1)
+          : Colors.transparent,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
@@ -1090,7 +1114,10 @@ class _NavRow extends StatelessWidget {
               ),
               if (count != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: selected
                         ? StrataPalette.accent.withValues(alpha: .14)
@@ -1102,7 +1129,9 @@ class _NavRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: selected ? StrataPalette.accent : StrataPalette.onSurfaceMuted,
+                      color: selected
+                          ? StrataPalette.accent
+                          : StrataPalette.onSurfaceMuted,
                     ),
                   ),
                 ),
@@ -1153,17 +1182,17 @@ class _EditorPlaceholderPane extends StatelessWidget {
             Text(
               'Select a note to view',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: StrataPalette.onSurfaceMuted,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: StrataPalette.onSurfaceMuted,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Choose a note from the list to open it here.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: StrataPalette.onSurfaceMuted.withValues(alpha: .8),
-                  ),
+                color: StrataPalette.onSurfaceMuted.withValues(alpha: .8),
+              ),
             ),
           ],
         ),

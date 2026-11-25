@@ -858,33 +858,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ],
                               ),
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  tooltip: 'Close',
-                                  visualDensity: VisualDensity.compact,
-                                  iconSize: 19,
-                                  onPressed: () => Navigator.of(ctx).pop(),
-                                  icon: const Icon(Icons.close_rounded),
+                            FilledButton.tonalIcon(
+                              onPressed: () => promptNewFolder(ctx, ref),
+                              icon: const Icon(Icons.add_rounded, size: 17),
+                              label: const Text('New'),
+                              style: FilledButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                minimumSize: const Size(82, 34),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
                                 ),
-                                FilledButton.tonalIcon(
-                                  onPressed: () => promptNewFolder(ctx, ref),
-                                  icon: const Icon(Icons.add_rounded, size: 17),
-                                  label: const Text('New'),
-                                  style: FilledButton.styleFrom(
-                                    visualDensity: VisualDensity.compact,
-                                    minimumSize: const Size(82, 34),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                    ),
-                                    textStyle: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 12.5,
-                                    ),
-                                  ),
+                                textStyle: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12.5,
                                 ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
