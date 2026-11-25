@@ -11,7 +11,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
-
 import '../../app/router.dart';
 import '../../app/theme/strata_palette.dart';
 import '../../core/utils/due_status.dart';
@@ -507,7 +506,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   void _jumpToMatch(int index) {
     final controller = _controller;
-    if (controller == null || index < 0 || index >= _searchMatches.length) return;
+    if (controller == null || index < 0 || index >= _searchMatches.length) {
+      return;
+    }
     final offset = _searchMatches[index];
     final queryLen = _searchCtrl.text.length;
     controller.updateSelection(
@@ -534,7 +535,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 hintText: 'Search…',
                 hintStyle: const TextStyle(fontSize: 13),
                 prefixIcon: const Icon(Icons.search_rounded, size: 16),
-                prefixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 0),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 0,
+                ),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? GestureDetector(
                         onTap: () {
@@ -544,9 +548,15 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                         child: const Icon(Icons.close_rounded, size: 14),
                       )
                     : null,
-                suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 0),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 28,
+                  minHeight: 0,
+                ),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
                 filled: true,
                 fillColor: StrataPalette.surfaceHigh.withValues(alpha: .7),
                 border: OutlineInputBorder(
@@ -559,7 +569,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: StrataPalette.accent, width: 1.2),
+                  borderSide: const BorderSide(
+                    color: StrataPalette.accent,
+                    width: 1.2,
+                  ),
                 ),
               ),
             ),
@@ -793,6 +806,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _watchDragOffset();
     });
+    final isMobile = MediaQuery.sizeOf(context).width < 640;
     final controller = _controller;
     if (controller == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -808,24 +822,25 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     ];
 
     return PopScope(
-        canPop: widget.onClose == null,
-        onPopInvokedWithResult: (didPop, _) async {
-          if (didPop) {
-            await _flushSave();
-            return;
-          }
-          if (widget.onClose != null) {
-            await _flushSave();
-            if (context.mounted) widget.onClose!();
-          }
-        },
-        child: Scaffold(
+      canPop: widget.onClose == null,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) {
+          await _flushSave();
+          return;
+        }
+        if (widget.onClose != null) {
+          await _flushSave();
+          if (context.mounted) widget.onClose!();
+        }
+      },
+      child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 56,
           titleSpacing: 0,
           leading: const SizedBox.shrink(),
           leadingWidth: 8,
           title: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(width: 4),
               _EditorIconButton(
@@ -848,14 +863,23 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     valueListenable: _titleCtrl,
                     builder: (context, value, _) {
                       final len = value.text.trim().length;
-                      final fontSize = (15.0 - (len > 20 ? (len - 20) * 0.2 : 0)).clamp(11.0, 15.0);
+                      final baseFont = isMobile ? 17.0 : 15.5;
+                      final shrinkStart = isMobile ? 18 : 20;
+                      final fontSize =
+                          (baseFont -
+                                  (len > shrinkStart
+                                      ? (len - shrinkStart) *
+                                            (isMobile ? .10 : .14)
+                                      : 0))
+                              .clamp(isMobile ? 14.0 : 12.5, baseFont);
                       return SizedBox(
-                        height: 36,
+                        height: isMobile ? 44 : 40,
                         child: TextField(
                           controller: _titleCtrl,
                           onChanged: _onTitleChanged,
                           maxLines: 1,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 fontSize: fontSize,
                               ),
@@ -867,24 +891,32 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                               color: StrataPalette.onSurfaceDim,
                             ),
                             filled: true,
-                            fillColor: StrataPalette.surfaceHighest.withValues(alpha: .35),
+                            fillColor: StrataPalette.surfaceHighest.withValues(
+                              alpha: .35,
+                            ),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(
+                                isMobile ? 10 : 8,
+                              ),
                               borderSide: BorderSide.none,
                             ),
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(
+                                isMobile ? 10 : 8,
+                              ),
                               borderSide: BorderSide.none,
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(
+                                isMobile ? 10 : 8,
+                              ),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 12 : 10,
+                              vertical: isMobile ? 10 : 8,
                             ),
-                            isDense: true,
+                            isDense: !isMobile,
                           ),
                         ),
                       );
@@ -947,7 +979,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                             h1: DefaultTextBlockStyle(
                               Theme.of(context).textTheme.headlineMedium!,
                               const HorizontalSpacing(0, 0),
-                              VerticalSpacing(_paraSpacing + 10, _paraSpacing + 2),
+                              VerticalSpacing(
+                                _paraSpacing + 10,
+                                _paraSpacing + 2,
+                              ),
                               const VerticalSpacing(0, 0),
                               null,
                             ),
@@ -955,7 +990,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                               Theme.of(context).textTheme.headlineSmall!
                                   .copyWith(fontWeight: FontWeight.w700),
                               const HorizontalSpacing(0, 0),
-                              VerticalSpacing(_paraSpacing + 8, _paraSpacing + 1),
+                              VerticalSpacing(
+                                _paraSpacing + 8,
+                                _paraSpacing + 1,
+                              ),
                               const VerticalSpacing(0, 0),
                               null,
                             ),
@@ -969,16 +1007,18 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                               null,
                             ),
                             paragraph: DefaultTextBlockStyle(
-                              Theme.of(
-                                context,
-                              ).textTheme.bodyLarge!.copyWith(height: _lineHeight),
+                              Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                height: _lineHeight,
+                              ),
                               const HorizontalSpacing(0, 0),
                               VerticalSpacing(_paraSpacing, _paraSpacing),
                               const VerticalSpacing(0, 0),
                               null,
                             ),
                             lists: DefaultListBlockStyle(
-                              Theme.of(context).textTheme.bodyLarge!.copyWith(height: _lineHeight),
+                              Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                height: _lineHeight,
+                              ),
                               const HorizontalSpacing(0, 0),
                               VerticalSpacing(_paraSpacing, _paraSpacing),
                               const VerticalSpacing(0, 0),
@@ -994,7 +1034,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     Positioned(
                       top: 4,
                       right: 14,
-                      child: IgnorePointer(child: _SavePill(state: _pillState!)),
+                      child: IgnorePointer(
+                        child: _SavePill(state: _pillState!),
+                      ),
                     ),
                   if (_wikiQuery != null)
                     Positioned(
@@ -1015,9 +1057,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 color: Theme.of(
                   context,
                 ).scaffoldBackgroundColor.withValues(alpha: .92),
-                border: Border(
-                  top: BorderSide(color: StrataPalette.outline),
-                ),
+                border: Border(top: BorderSide(color: StrataPalette.outline)),
               ),
               child: SafeArea(
                 top: false,
@@ -1029,8 +1069,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                         onInsertDivider: _insertDivider,
                         lineHeight: _lineHeight,
                         paraSpacing: _paraSpacing,
-                        onLineHeightChanged: (v) => setState(() => _lineHeight = v),
-                        onParaSpacingChanged: (v) => setState(() => _paraSpacing = v),
+                        onLineHeightChanged: (v) =>
+                            setState(() => _lineHeight = v),
+                        onParaSpacingChanged: (v) =>
+                            setState(() => _paraSpacing = v),
                       ),
                     ),
                     Padding(
@@ -1298,11 +1340,23 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           ),
         );
       case 'pdf':
-        await exportPdf(context, ref, note.id, lineHeight: _lineHeight, paraSpacing: _paraSpacing);
+        await exportPdf(
+          context,
+          ref,
+          note.id,
+          lineHeight: _lineHeight,
+          paraSpacing: _paraSpacing,
+        );
       case 'md':
         await exportMarkdown(context, ref, note.id);
       case 'docx':
-        await exportDocx(context, ref, note.id, lineHeight: _lineHeight, paraSpacing: _paraSpacing);
+        await exportDocx(
+          context,
+          ref,
+          note.id,
+          lineHeight: _lineHeight,
+          paraSpacing: _paraSpacing,
+        );
       case 'template':
         await _flushSave();
         final fresh = await ref.read(notesRepositoryProvider).getById(note.id);
@@ -1311,11 +1365,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           if (mounted) showToast(ref, 'Saved as template');
         }
       case 'trash':
-        final title = note.title.trim().isEmpty ? 'Untitled' : note.title.trim();
+        final title = note.title.trim().isEmpty
+            ? 'Untitled'
+            : note.title.trim();
         final confirmed = await showConfirmDialog(
           context,
           title: 'Move to trash?',
-          message: '“$title” will be moved to the trash. You can restore it '
+          message:
+              '“$title” will be moved to the trash. You can restore it '
               'anytime from the Trash tab.',
           confirmLabel: 'Move to trash',
           icon: Icons.delete_outline_rounded,
@@ -1397,8 +1454,8 @@ class _MenuTile extends StatelessWidget {
     final color = danger
         ? StrataPalette.coral
         : enabled
-            ? StrataPalette.onBackground
-            : StrataPalette.onSurfaceMuted;
+        ? StrataPalette.onBackground
+        : StrataPalette.onSurfaceMuted;
     return InkWell(
       onTap: enabled ? onTap : null,
       child: Padding(
@@ -1445,7 +1502,9 @@ class _SavePill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: .85),
+            color: Theme.of(
+              context,
+            ).scaffoldBackgroundColor.withValues(alpha: .85),
             border: Border.all(color: color.withValues(alpha: .35)),
           ),
           child: Row(
@@ -1466,7 +1525,12 @@ class _SavePill extends StatelessWidget {
         )
         .animate(key: ValueKey(state))
         .fadeIn(duration: 160.ms)
-        .slideY(begin: -.4, end: 0, duration: 200.ms, curve: Curves.easeOutCubic);
+        .slideY(
+          begin: -.4,
+          end: 0,
+          duration: 200.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 }
 
@@ -1489,8 +1553,12 @@ class _Toolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget chip(IconData icon, String label, VoidCallback onTap,
-            {Color? iconColor}) =>
+    Widget chip(
+      IconData icon,
+      String label,
+      VoidCallback onTap, {
+      Color? iconColor,
+    }) =>
         _ToolChip(icon: icon, label: label, onTap: onTap, iconColor: iconColor);
 
     return Padding(
@@ -1503,19 +1571,11 @@ class _Toolbar extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              chip(
-                Icons.table_chart_outlined,
-                'Table',
-                onInsertTable,
-              ),
+              chip(Icons.table_chart_outlined, 'Table', onInsertTable),
               const SizedBox(width: 6),
               chip(Icons.image_outlined, 'Image', onInsertImage),
               const SizedBox(width: 6),
-              chip(
-                Icons.horizontal_rule_rounded,
-                'Break',
-                onInsertDivider,
-              ),
+              chip(Icons.horizontal_rule_rounded, 'Break', onInsertDivider),
               const SizedBox(width: 6),
               chip(Icons.attach_file_rounded, 'Attach', onAttachFile),
               const SizedBox(width: 6),
@@ -1606,12 +1666,18 @@ class _ToolChipState extends State<_ToolChip> {
           decoration: BoxDecoration(
             color: StrataPalette.surfaceHigh.withValues(alpha: .8),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: StrataPalette.accent.withValues(alpha: .15)),
+            border: Border.all(
+              color: StrataPalette.accent.withValues(alpha: .15),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(widget.icon, size: 14, color: widget.iconColor ?? StrataPalette.accent),
+              Icon(
+                widget.icon,
+                size: 14,
+                color: widget.iconColor ?? StrataPalette.accent,
+              ),
               const SizedBox(width: 5),
               Text(
                 widget.label,
@@ -1657,8 +1723,7 @@ class _FormatBar extends StatefulWidget {
 class _FormatBarState extends State<_FormatBar> {
   /// All quill list flavors share the single 'list' attribute key; only the
   /// value ('bullet' | 'ordered' | 'checked' | 'unchecked') differs.
-  String? get _listValue =>
-      _styleAttrs[Attribute.ul.key]?.value as String?;
+  String? get _listValue => _styleAttrs[Attribute.ul.key]?.value as String?;
 
   Map<String, Attribute> _styleAttrs = const {};
 
@@ -1724,7 +1789,9 @@ class _FormatBarState extends State<_FormatBar> {
       2 => Attribute.h2,
       _ => Attribute.h3,
     };
-    widget.controller.formatSelection(current == level ? Attribute.header : attr);
+    widget.controller.formatSelection(
+      current == level ? Attribute.header : attr,
+    );
   }
 
   void _toggleList(Attribute target) {
@@ -1766,7 +1833,10 @@ class _FormatBarState extends State<_FormatBar> {
             if (existing != null)
               TextButton(
                 onPressed: () => Navigator.pop(ctx, ''),
-                child: Text('Remove', style: TextStyle(color: StrataPalette.coral)),
+                child: Text(
+                  'Remove',
+                  style: TextStyle(color: StrataPalette.coral),
+                ),
               ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -1865,30 +1935,26 @@ class _FormatBarState extends State<_FormatBar> {
             _FmtBtn(
               label: 'H1',
               tooltip: 'Heading 1',
-              active:
-                  _styleAttrs[Attribute.header.key]?.value == 1,
+              active: _styleAttrs[Attribute.header.key]?.value == 1,
               onTap: () => _setHeader(1),
             ),
             _FmtBtn(
               label: 'H2',
               tooltip: 'Heading 2',
-              active:
-                  _styleAttrs[Attribute.header.key]?.value == 2,
+              active: _styleAttrs[Attribute.header.key]?.value == 2,
               onTap: () => _setHeader(2),
             ),
             _FmtBtn(
               label: 'H3',
               tooltip: 'Heading 3',
-              active:
-                  _styleAttrs[Attribute.header.key]?.value == 3,
+              active: _styleAttrs[Attribute.header.key]?.value == 3,
               onTap: () => _setHeader(3),
             ),
             _FmtBtn(
               icon: Icons.notes_rounded,
               tooltip: 'Body text',
               active: !_styleAttrs.containsKey(Attribute.header.key),
-              onTap: () => widget.controller
-                  .formatSelection(Attribute.header),
+              onTap: () => widget.controller.formatSelection(Attribute.header),
             ),
           ]),
           gap(),
@@ -2070,7 +2136,11 @@ class _SpacingMenu extends StatelessWidget {
                   SizedBox(
                     width: 20,
                     child: (lineHeight - val).abs() < 0.01
-                        ? const Icon(Icons.check, size: 15, color: StrataPalette.accent)
+                        ? const Icon(
+                            Icons.check,
+                            size: 15,
+                            color: StrataPalette.accent,
+                          )
                         : null,
                   ),
                   const SizedBox(width: 6),
@@ -2115,7 +2185,11 @@ class _SpacingMenu extends StatelessWidget {
                   SizedBox(
                     width: 20,
                     child: (paraSpacing - val).abs() < 0.01
-                        ? const Icon(Icons.check, size: 15, color: StrataPalette.accent)
+                        ? const Icon(
+                            Icons.check,
+                            size: 15,
+                            color: StrataPalette.accent,
+                          )
                         : null,
                   ),
                   const SizedBox(width: 6),
@@ -2138,9 +2212,7 @@ class _SpacingMenu extends StatelessWidget {
         child: Container(
           width: 32,
           height: 30,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
           alignment: Alignment.center,
           child: Icon(Icons.format_line_spacing_rounded, size: 16, color: tint),
         ),
@@ -2183,7 +2255,9 @@ class _FmtBtnState extends State<_FmtBtn> {
 
   @override
   Widget build(BuildContext context) {
-    final tint = widget.active ? StrataPalette.accent : StrataPalette.onSurfaceMuted;
+    final tint = widget.active
+        ? StrataPalette.accent
+        : StrataPalette.onSurfaceMuted;
     return Tooltip(
       message: widget.tooltip ?? '',
       waitDuration: const Duration(milliseconds: 500),
@@ -2218,12 +2292,14 @@ class _FmtBtnState extends State<_FmtBtn> {
                     style: TextStyle(
                       fontSize: widget.label!.length > 1 ? 12 : 15,
                       fontWeight: FontWeight.w800,
-                      fontStyle: widget.italic ? FontStyle.italic : FontStyle.normal,
+                      fontStyle: widget.italic
+                          ? FontStyle.italic
+                          : FontStyle.normal,
                       decoration: widget.underline
                           ? TextDecoration.underline
                           : widget.strike
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
                       color: tint,
                       height: 1.0,
                     ),
@@ -2289,9 +2365,7 @@ class _UndoRedoBtn extends StatelessWidget {
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: enabled
-              ? StrataPalette.surfaceHighest
-              : Colors.transparent,
+          color: enabled ? StrataPalette.surfaceHighest : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Icon(
@@ -2326,9 +2400,7 @@ class _SearchBtn extends StatelessWidget {
         height: 28,
         margin: const EdgeInsets.symmetric(horizontal: 1),
         decoration: BoxDecoration(
-          color: enabled
-              ? StrataPalette.surfaceHighest
-              : Colors.transparent,
+          color: enabled ? StrataPalette.surfaceHighest : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Icon(

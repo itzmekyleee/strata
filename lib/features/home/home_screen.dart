@@ -100,7 +100,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final sort = ref.watch(noteSortProvider);
 
     return Scaffold(
-      floatingActionButton: (searching || width < 640) ? null : const _NewNoteFab(),
+      floatingActionButton: (searching || width < 640)
+          ? null
+          : const _NewNoteFab(),
       appBar: AppBar(
         titleSpacing: 16,
         centerTitle: false,
@@ -136,11 +138,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 label: const Text('Folders'),
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   backgroundColor: StrataPalette.accent.withValues(alpha: .10),
-                  side: BorderSide(color: StrataPalette.accent.withValues(alpha: .25)),
+                  side: BorderSide(
+                    color: StrataPalette.accent.withValues(alpha: .25),
+                  ),
                   foregroundColor: StrataPalette.accent,
-                  textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),
@@ -159,7 +169,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: TextField(
                         controller: _searchCtrl,
                         focusNode: _searchFocus,
-                        onTap: () => ref.read(searchToggleProvider.notifier).set(true),
+                        onTap: () =>
+                            ref.read(searchToggleProvider.notifier).set(true),
                         onChanged: (v) {
                           ref.read(searchQueryProvider.notifier).set(v);
                           ref.read(searchToggleProvider.notifier).set(true);
@@ -171,26 +182,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             size: 20,
                             color: StrataPalette.onSurfaceMuted,
                           ),
-                          prefixIconConstraints: const BoxConstraints(minWidth: 42),
+                          prefixIconConstraints: const BoxConstraints(
+                            minWidth: 42,
+                          ),
                           suffixIcon: searching
                               ? IconButton(
                                   tooltip: 'Clear search',
                                   visualDensity: VisualDensity.compact,
-                                  icon: const Icon(Icons.close_rounded, size: 19),
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    size: 19,
+                                  ),
                                   onPressed: () => _toggleSearch(false),
                                 )
                               : null,
-                          suffixIconConstraints: const BoxConstraints(minWidth: 40),
+                          suffixIconConstraints: const BoxConstraints(
+                            minWidth: 40,
+                          ),
                           filled: true,
-                          fillColor: StrataPalette.surfaceHigh.withValues(alpha: .55),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          fillColor: StrataPalette.surfaceHigh.withValues(
+                            alpha: .55,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: StrataPalette.outline),
+                            borderSide: BorderSide(
+                              color: StrataPalette.outline,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -212,7 +236,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     menuPadding: const EdgeInsets.symmetric(vertical: 4),
                     initialValue: sort,
-                    onSelected: (s) => ref.read(noteSortProvider.notifier).set(s),
+                    onSelected: (s) =>
+                        ref.read(noteSortProvider.notifier).set(s),
                     itemBuilder: (_) => [
                       const PopupMenuItem<NoteSort>(
                         enabled: false,
@@ -224,7 +249,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         icon: Icons.history_rounded,
                         label: 'Recently updated',
                         trailing: sort == NoteSort.updated
-                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 17,
+                                color: StrataPalette.accent,
+                              )
                             : null,
                       ),
                       strataPopupItem(
@@ -232,7 +261,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         icon: Icons.sort_by_alpha_rounded,
                         label: 'Title (A–Z)',
                         trailing: sort == NoteSort.titleAsc
-                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 17,
+                                color: StrataPalette.accent,
+                              )
                             : null,
                       ),
                       strataPopupItem(
@@ -240,7 +273,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         icon: Icons.event_available_outlined,
                         label: 'By due date',
                         trailing: sort == NoteSort.dueDate
-                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 17,
+                                color: StrataPalette.accent,
+                              )
                             : null,
                       ),
                     ],
@@ -259,7 +296,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             Expanded(
-              child: searching && ref.watch(searchQueryProvider).trim().isNotEmpty
+              child:
+                  searching && ref.watch(searchQueryProvider).trim().isNotEmpty
                   ? InlineSearchPanel(
                       focusNode: _searchFocus,
                       onClose: () => _toggleSearch(false),
@@ -308,7 +346,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Expanded(
                           child: Text(
                             '${_selectedIds.length} selected',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
                         IconButton(
@@ -330,7 +369,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -0.3,
                                 ),
@@ -346,7 +386,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               color: StrataPalette.accent,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                            child: const Icon(
+                              Icons.add_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ],
@@ -363,7 +407,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         controller: _searchCtrl,
                         focusNode: _searchFocus,
                         onTap: () {
-                          if (!searching) ref.read(searchToggleProvider.notifier).set(true);
+                          if (!searching) {
+                            ref.read(searchToggleProvider.notifier).set(true);
+                          }
                         },
                         onChanged: (v) {
                           ref.read(searchQueryProvider.notifier).set(v);
@@ -371,27 +417,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Search notes...',
-                          prefixIcon: Icon(Icons.search_rounded, size: 20, color: StrataPalette.onSurfaceMuted),
-                          prefixIconConstraints: const BoxConstraints(minWidth: 42),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            size: 20,
+                            color: StrataPalette.onSurfaceMuted,
+                          ),
+                          prefixIconConstraints: const BoxConstraints(
+                            minWidth: 42,
+                          ),
                           suffixIcon: searching
                               ? IconButton(
                                   tooltip: 'Close search',
                                   visualDensity: VisualDensity.compact,
-                                  icon: const Icon(Icons.close_rounded, size: 18),
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    size: 18,
+                                  ),
                                   onPressed: () => _toggleSearch(false),
                                 )
                               : null,
-                          suffixIconConstraints: const BoxConstraints(minWidth: 40),
+                          suffixIconConstraints: const BoxConstraints(
+                            minWidth: 40,
+                          ),
                           filled: true,
-                          fillColor: StrataPalette.surfaceHigh.withValues(alpha: .65),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          fillColor: StrataPalette.surfaceHigh.withValues(
+                            alpha: .65,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: StrataPalette.outline),
+                            borderSide: BorderSide(
+                              color: StrataPalette.outline,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -413,7 +476,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     menuPadding: const EdgeInsets.symmetric(vertical: 4),
                     initialValue: sort,
-                    onSelected: (s) => ref.read(noteSortProvider.notifier).set(s),
+                    onSelected: (s) =>
+                        ref.read(noteSortProvider.notifier).set(s),
                     itemBuilder: (_) => [
                       const PopupMenuItem<NoteSort>(
                         enabled: false,
@@ -425,7 +489,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         icon: Icons.history_rounded,
                         label: 'Recently updated',
                         trailing: sort == NoteSort.updated
-                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 17,
+                                color: StrataPalette.accent,
+                              )
                             : null,
                       ),
                       strataPopupItem(
@@ -433,7 +501,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         icon: Icons.sort_by_alpha_rounded,
                         label: 'Title (A–Z)',
                         trailing: sort == NoteSort.titleAsc
-                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 17,
+                                color: StrataPalette.accent,
+                              )
                             : null,
                       ),
                       strataPopupItem(
@@ -441,7 +513,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         icon: Icons.event_available_outlined,
                         label: 'By due date',
                         trailing: sort == NoteSort.dueDate
-                            ? const Icon(Icons.check_rounded, size: 17, color: StrataPalette.accent)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 17,
+                                color: StrataPalette.accent,
+                              )
                             : null,
                       ),
                     ],
@@ -461,7 +537,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: searching && ref.watch(searchQueryProvider).trim().isNotEmpty
+              child:
+                  searching && ref.watch(searchQueryProvider).trim().isNotEmpty
                   ? InlineSearchPanel(
                       focusNode: _searchFocus,
                       onClose: () => _toggleSearch(false),
@@ -491,7 +568,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final folderId = ref.read(selectedFolderProvider);
     final choice = await showTemplatePickerSheet(context, ref);
     if (choice == null || !context.mounted) return;
-    final note = await ref.read(noteActionsProvider).createNote(
+    final note = await ref
+        .read(noteActionsProvider)
+        .createNote(
           folderId: folderId,
           title: choice.title,
           contentDelta: choice.deltaJson,
@@ -590,7 +669,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await repo.save(note);
     }
     if (mounted) {
-      showToast(ref, 'Moved ${_selectedIds.length} note${_selectedIds.length == 1 ? '' : 's'}');
+      showToast(
+        ref,
+        'Moved ${_selectedIds.length} note${_selectedIds.length == 1 ? '' : 's'}',
+      );
       _clearSelection();
     }
   }
@@ -680,120 +762,153 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _showFolderSheet(BuildContext context, WidgetRef ref) {
     return showModalBottomSheet<void>(
       context: context,
+      isDismissible: true,
+      enableDrag: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final size = MediaQuery.sizeOf(ctx);
         final isWide = size.width >= 900;
-        return SafeArea(
-          top: false,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isWide ? 640 : double.infinity,
-                maxHeight: size.height * .78,
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(ctx).pop(),
               ),
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: StrataPalette.surfaceHigh,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                top: false,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isWide ? 640 : double.infinity,
+                    maxHeight: size.height * .78,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: .14),
-                      blurRadius: 28,
-                      offset: const Offset(0, -8),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: StrataPalette.outlineStrong,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
+                  child: Container(
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: StrataPalette.surfaceHigh,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: .14),
+                          blurRadius: 28,
+                          offset: const Offset(0, -8),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 14),
-                    Row(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: StrataPalette.accent.withValues(alpha: .12),
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: const Icon(
-                            Icons.folder_copy_outlined,
-                            size: 19,
-                            color: StrataPalette.accent,
+                        Center(
+                          child: Container(
+                            width: 36,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: StrataPalette.outlineStrong,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Folders',
-                                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.3,
-                                    ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: StrataPalette.accent.withValues(
+                                  alpha: .12,
+                                ),
+                                borderRadius: BorderRadius.circular(11),
                               ),
-                              Text(
-                                'Browse and organize your notes',
-                                style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
-                                      color: StrataPalette.onSurfaceMuted,
-                                      fontSize: 11,
-                                    ),
+                              child: const Icon(
+                                Icons.folder_copy_outlined,
+                                size: 19,
+                                color: StrataPalette.accent,
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Folders',
+                                    style: Theme.of(ctx).textTheme.titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.3,
+                                        ),
+                                  ),
+                                  Text(
+                                    'Browse and organize your notes',
+                                    style: Theme.of(ctx).textTheme.labelSmall
+                                        ?.copyWith(
+                                          color: StrataPalette.onSurfaceMuted,
+                                          fontSize: 11,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  tooltip: 'Close',
+                                  visualDensity: VisualDensity.compact,
+                                  iconSize: 19,
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                                FilledButton.tonalIcon(
+                                  onPressed: () => promptNewFolder(ctx, ref),
+                                  icon: const Icon(Icons.add_rounded, size: 17),
+                                  label: const Text('New'),
+                                  style: FilledButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    minimumSize: const Size(82, 34),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    textStyle: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        FilledButton.tonalIcon(
-                          onPressed: () => promptNewFolder(ctx, ref),
-                          icon: const Icon(Icons.add_rounded, size: 17),
-                          label: const Text('New'),
-                          style: FilledButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            minimumSize: const Size(82, 34),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            textStyle: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12.5,
+                        const SizedBox(height: 12),
+                        Divider(
+                          height: 1,
+                          color: StrataPalette.outline.withValues(alpha: .7),
+                        ),
+                        const SizedBox(height: 6),
+                        Flexible(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: FolderTree(
+                              onPicked: (_) => Navigator.of(ctx).pop(),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Divider(height: 1, color: StrataPalette.outline.withValues(alpha: .7)),
-                    const SizedBox(height: 6),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: FolderTree(
-                          onPicked: (_) => Navigator.of(ctx).pop(),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         );
       },
     );
@@ -872,19 +987,23 @@ class _NotesList extends ConsumerWidget {
         final itemCount = notes.length + (hasSections ? 2 : 0);
 
         Widget buildTile(Note note, int index) => NoteTile(
-              note: note,
-              index: index,
-              selected: note.id == selectedNoteId,
-              selectionMode: selectionMode,
-              checked: selectedIds.contains(note.id),
-              onChecked: onToggleSelection != null ? () => onToggleSelection!(note.id) : null,
-              onEnterSelection: onEnterSelection != null ? () => onEnterSelection!(note.id) : null,
-              onTap: selectionMode
-                  ? () => onToggleSelection?.call(note.id)
-                  : (onNoteTap != null
-                      ? () => onNoteTap!(context, note.id)
-                      : () => context.push('/editor/${note.id}')),
-            );
+          note: note,
+          index: index,
+          selected: note.id == selectedNoteId,
+          selectionMode: selectionMode,
+          checked: selectedIds.contains(note.id),
+          onChecked: onToggleSelection != null
+              ? () => onToggleSelection!(note.id)
+              : null,
+          onEnterSelection: onEnterSelection != null
+              ? () => onEnterSelection!(note.id)
+              : null,
+          onTap: selectionMode
+              ? () => onToggleSelection?.call(note.id)
+              : (onNoteTap != null
+                    ? () => onNoteTap!(context, note.id)
+                    : () => context.push('/editor/${note.id}')),
+        );
 
         return Center(
           child: ConstrainedBox(
@@ -904,10 +1023,7 @@ class _NotesList extends ConsumerWidget {
                         if (i == pinned.length + 1) {
                           return const _SectionHeader('Recent');
                         }
-                        return buildTile(
-                          unpinned[i - pinned.length - 2],
-                          i,
-                        );
+                        return buildTile(unpinned[i - pinned.length - 2], i);
                       },
                     )
                   : ListView.builder(
@@ -936,10 +1052,10 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
-              color: StrataPalette.onSurfaceMuted,
-            ),
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+          color: StrataPalette.onSurfaceMuted,
+        ),
       ),
     );
   }
@@ -994,33 +1110,33 @@ class _NewNoteFab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Semantics(
-      label: 'Create new note',
-      button: true,
-      child: FloatingActionButton(
-        tooltip: 'New note',
-        elevation: 3,
-        highlightElevation: 5,
-        backgroundColor: StrataPalette.accent,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        onPressed: () async {
-          final folderId = ref.read(selectedFolderProvider);
-          final choice = await showTemplatePickerSheet(context, ref);
-          if (choice == null || !context.mounted) return;
-          final note = await ref
-              .read(noteActionsProvider)
-              .createNote(
-                folderId: folderId,
-                title: choice.title,
-                contentDelta: choice.deltaJson,
-              );
-          if (context.mounted) await context.push('/editor/${note.id}');
-        },
-        child: const Icon(Icons.add_rounded, size: 26),
-      ),
-    )
+          label: 'Create new note',
+          button: true,
+          child: FloatingActionButton(
+            tooltip: 'New note',
+            elevation: 3,
+            highlightElevation: 5,
+            backgroundColor: StrataPalette.accent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            onPressed: () async {
+              final folderId = ref.read(selectedFolderProvider);
+              final choice = await showTemplatePickerSheet(context, ref);
+              if (choice == null || !context.mounted) return;
+              final note = await ref
+                  .read(noteActionsProvider)
+                  .createNote(
+                    folderId: folderId,
+                    title: choice.title,
+                    contentDelta: choice.deltaJson,
+                  );
+              if (context.mounted) await context.push('/editor/${note.id}');
+            },
+            child: const Icon(Icons.add_rounded, size: 26),
+          ),
+        )
         .animate()
         .scale(
           begin: const Offset(.4, .4),

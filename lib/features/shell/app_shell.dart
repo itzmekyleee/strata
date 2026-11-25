@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -95,6 +93,7 @@ class _ScaffoldBase extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlobalShortcuts(
       child: Scaffold(
+        extendBody: true,
         body: Row(
           children: [
             ?side,
@@ -205,7 +204,6 @@ class _MobileTabBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final branch = shell.currentIndex;
     final visualSlot = _visualSlotForBranch(branch);
     const slotCount = 5;
@@ -214,26 +212,25 @@ class _MobileTabBar extends ConsumerWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(
-              height: 68,
-              decoration: BoxDecoration(
-                color: StrataPalette.surface.withValues(alpha: isDark ? .22 : .14),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: StrataPalette.outlineStrong.withValues(alpha: .5), width: .7),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? .22 : .12),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+        child: Container(
+          height: 68,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: StrataPalette.outlineStrong.withValues(alpha: .35),
+              width: .7,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .16),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: LayoutBuilder(
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: LayoutBuilder(
                 builder: (context, constraints) {
                   final itemWidth = constraints.maxWidth / slotCount;
                   const indicatorWidth = 52.0;
@@ -312,9 +309,7 @@ class _MobileTabBar extends ConsumerWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 }
 
