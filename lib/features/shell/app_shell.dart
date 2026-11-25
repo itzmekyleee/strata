@@ -221,12 +221,12 @@ class _MobileTabBar extends ConsumerWidget {
             child: Container(
               height: 68,
               decoration: BoxDecoration(
-                color: StrataPalette.surface.withValues(alpha: isDark ? .78 : .88),
+                color: StrataPalette.surface.withValues(alpha: isDark ? .22 : .14),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: StrataPalette.outlineStrong, width: .7),
+                border: Border.all(color: StrataPalette.outlineStrong.withValues(alpha: .5), width: .7),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? .22 : .08),
+                    color: Colors.black.withValues(alpha: isDark ? .22 : .12),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -947,30 +947,40 @@ class _LeftNavPane extends ConsumerWidget {
                 selected: shell.currentIndex == 2,
                 onTap: () => shell.goBranch(2, initialLocation: shell.currentIndex == 2),
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'FOLDERS',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 10,
-                        letterSpacing: 1.2,
-                        color: StrataPalette.onSurfaceMuted,
-                        fontWeight: FontWeight.w700,
+              const SizedBox(height: 18),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Folders',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.1,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'New folder',
-                    visualDensity: VisualDensity.compact,
-                    iconSize: 18,
-                    onPressed: () => promptNewFolder(context, ref),
-                    icon: const Icon(Icons.create_new_folder_outlined),
-                  ),
-                ],
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: StrataPalette.accent.withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: IconButton(
+                        tooltip: 'New folder',
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 16,
+                        color: StrataPalette.accent,
+                        onPressed: () => promptNewFolder(context, ref),
+                        icon: const Icon(Icons.add_rounded),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Expanded(
                 child: SingleChildScrollView(
                   child: FolderTree(

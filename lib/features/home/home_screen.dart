@@ -680,51 +680,122 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _showFolderSheet(BuildContext context, WidgetRef ref) {
     return showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
-      // Keep the sheet clear of the floating navigation dock.
-      useSafeArea: true,
-      builder: (ctx) => FractionallySizedBox(
-        heightFactor: .72,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Row(
-                  children: [
-                    Text(
-                      'Folders',
-                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2,
-                          ),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final size = MediaQuery.sizeOf(ctx);
+        final isWide = size.width >= 900;
+        return SafeArea(
+          top: false,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isWide ? 640 : double.infinity,
+                maxHeight: size.height * .78,
+              ),
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: StrataPalette.surfaceHigh,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: .14),
+                      blurRadius: 28,
+                      offset: const Offset(0, -8),
                     ),
-                    const Spacer(),
-                    FilledButton.tonalIcon(
-                      onPressed: () => promptNewFolder(context, ref),
-                      icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-                      label: const Text('New'),
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ],
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: StrataPalette.outlineStrong,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: StrataPalette.accent.withValues(alpha: .12),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: const Icon(
+                            Icons.folder_copy_outlined,
+                            size: 19,
+                            color: StrataPalette.accent,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Folders',
+                                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.3,
+                                    ),
+                              ),
+                              Text(
+                                'Browse and organize your notes',
+                                style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                                      color: StrataPalette.onSurfaceMuted,
+                                      fontSize: 11,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: () => promptNewFolder(ctx, ref),
+                          icon: const Icon(Icons.add_rounded, size: 17),
+                          label: const Text('New'),
+                          style: FilledButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            minimumSize: const Size(82, 34),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Divider(height: 1, color: StrataPalette.outline.withValues(alpha: .7)),
+                    const SizedBox(height: 6),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: FolderTree(
+                          onPicked: (_) => Navigator.of(ctx).pop(),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: FolderTree(onPicked: (_) => Navigator.of(ctx).pop()),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

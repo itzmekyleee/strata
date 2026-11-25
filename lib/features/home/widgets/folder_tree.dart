@@ -290,117 +290,155 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final folderColor = color ?? StrataPalette.accent;
     final semanticsLabel = '${count != null ? "$count notes. " : ""}'
         '${selected ? "Selected. " : ""}'
         '${hasChildren ? (expanded ? "Expanded." : "Collapsed.") : ''}';
+
     return Padding(
-      padding: EdgeInsets.only(left: compact ? 0 : depth * 12.0),
+      padding: EdgeInsets.only(
+        left: compact ? 0 : depth * 14.0,
+        bottom: 2,
+      ),
       child: Semantics(
         label: '$label. $semanticsLabel',
         button: true,
         selected: selected,
-        child: Material(
-        color: selected
-            ? StrataPalette.accent.withValues(alpha: .13)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 22,
-                  child: hasChildren
-                      ? GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: onToggle,
-                          child: AnimatedRotation(
-                            turns: expanded ? .25 : 0,
-                            duration: const Duration(milliseconds: 200),
-                            child: Icon(
-                              Icons.chevron_right_rounded,
-                              size: 18,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: selected
+                ? folderColor.withValues(alpha: .13)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: selected
+                ? Border.all(color: folderColor.withValues(alpha: .18))
+                : null,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      child: hasChildren
+                          ? GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: onToggle,
+                              child: AnimatedRotation(
+                                turns: expanded ? .25 : 0,
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOutCubic,
+                                child: Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 16,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: folderColor.withValues(
+                          alpha: selected ? .18 : .10,
+                        ),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Icon(icon, size: 16, color: folderColor),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontSize: 13.5,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w600,
+                          color: selected
+                              ? folderColor
+                              : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    if (count != null)
+                      Container(
+                        width: 24,
+                        height: 22,
+                        margin: const EdgeInsets.only(left: 6),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: folderColor.withValues(alpha: .11),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '$count',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: folderColor,
                           ),
-                        )
-                      : null,
+                        ),
+                      ),
+                    if (onMenuSelected != null)
+                      SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: PopupMenuButton<String>(
+                          onSelected: onMenuSelected,
+                          color: StrataPalette.surfaceHighest,
+                          elevation: 2,
+                          offset: const Offset(0, 34),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.zero,
+                          iconSize: 16,
+                          constraints: const BoxConstraints(minWidth: 180),
+                          itemBuilder: (_) => [
+                            strataPopupItem(
+                              value: 'new',
+                              icon: Icons.create_new_folder_outlined,
+                              label: 'New subfolder',
+                            ),
+                            strataPopupItem(
+                              value: 'rename',
+                              icon: Icons.drive_file_rename_outline_rounded,
+                              label: 'Rename',
+                            ),
+                            strataPopupItem(
+                              value: 'color',
+                              icon: Icons.palette_outlined,
+                              label: 'Change color',
+                            ),
+                            strataPopupItem(
+                              value: 'delete',
+                              icon: Icons.delete_outline_rounded,
+                              label: 'Delete',
+                              danger: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
-                Icon(icon, size: 18, color: color ?? theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                if (count != null)
-                  Container(
-                    margin: const EdgeInsets.only(left: 6),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: (color ?? theme.colorScheme.primary)
-                          .withValues(alpha: .15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '$count',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: color ?? theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                if (onMenuSelected != null)
-                  PopupMenuButton<String>(
-                    onSelected: onMenuSelected,
-                    splashRadius: 18,
-                    padding: EdgeInsets.zero,
-                    iconSize: 17,
-                    constraints: const BoxConstraints(minWidth: 196),
-                    itemBuilder: (_) => [
-                      strataPopupItem(
-                        value: 'new',
-                        icon: Icons.create_new_folder_outlined,
-                        label: 'New subfolder',
-                      ),
-                      strataPopupItem(
-                        value: 'rename',
-                        icon: Icons.drive_file_rename_outline_rounded,
-                        label: 'Rename',
-                      ),
-                      strataPopupItem(
-                        value: 'color',
-                        icon: Icons.palette_outlined,
-                        label: 'Change color',
-                      ),
-                      strataPopupItem(
-                        value: 'delete',
-                        icon: Icons.delete_outline_rounded,
-                        label: 'Delete',
-                        danger: true,
-                      ),
-                    ],
-                  ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

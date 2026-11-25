@@ -892,22 +892,20 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   ),
                 ),
               ),
+              const SizedBox(width: 12),
+              _EditorIconButton(
+                icon: Icons.search_rounded,
+                isActive: _searchActive,
+                onTap: _toggleSearch,
+              ),
+              const SizedBox(width: 4),
+              _EditorIconButton(
+                icon: Icons.more_vert_rounded,
+                onTap: () => _showActionsMenu(context, controller),
+              ),
+              const SizedBox(width: 8),
             ],
           ),
-          actions: [
-            const SizedBox(width: 12),
-            _EditorIconButton(
-              icon: Icons.search_rounded,
-              isActive: _searchActive,
-              onTap: _toggleSearch,
-            ),
-            const SizedBox(width: 4),
-            _EditorIconButton(
-              icon: Icons.more_vert_rounded,
-              onTap: () => _showActionsMenu(context, controller),
-            ),
-            const SizedBox(width: 8),
-          ],
         ),
         body: Column(
           children: [
@@ -1165,6 +1163,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   _menuAction('redo');
                 },
               ),
+              _MenuTile(
+                icon: Icons.content_paste_go_rounded,
+                label: 'Paste as plain text',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _menuAction('paste_plain');
+                },
+              ),
               Divider(height: 1, color: StrataPalette.outline),
               _MenuTile(
                 icon: Icons.sell_outlined,
@@ -1248,6 +1254,20 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         if (_controller?.hasUndo ?? false) _controller!.undo();
       case 'redo':
         if (_controller?.hasRedo ?? false) _controller!.redo();
+      case 'paste_plain':
+        final ctrl = _controller;
+        if (ctrl == null || !ctrl.selection.isValid) return;
+        final data = await Clipboard.getData(Clipboard.kTextPlain);
+        final text = data?.text;
+        if (text == null || text.isEmpty) return;
+        final index = ctrl.selection.baseOffset;
+        final length = ctrl.selection.extentOffset - index;
+        final plain = text.replaceAll('\r\n', '\n');
+        ctrl.replaceText(index, length, plain, null);
+        ctrl.updateSelection(
+          TextSelection.collapsed(offset: index + plain.length),
+          ChangeSource.local,
+        );
       case 'tags':
         showAssignTagsSheet(context, note.id);
       case 'move':
