@@ -82,19 +82,7 @@ class _ScaffoldBase extends StatelessWidget {
           children: [
             ?side,
             Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: side == null
-                        ? const Alignment(-.8, -1)
-                        : const Alignment(-.2, -1.1),
-                    radius: 1.35,
-                    colors: [StrataPalette.glow, StrataPalette.surface],
-                    stops: const [0, .5],
-                  ),
-                ),
-                child: _SectionTransition(index: index, child: child),
-              ),
+              child: _SectionTransition(index: index, child: child),
             ),
           ],
         ),
@@ -811,84 +799,72 @@ class _TabletLandscapeShellState extends ConsumerState<_TabletLandscapeShell> {
 
     return GlobalShortcuts(
       child: Scaffold(
-        body: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(-.2, -1.1),
-              radius: 1.35,
-              colors: [StrataPalette.glow, StrataPalette.background],
-              stops: const [0, .5],
-            ),
-          ),
-          child: Row(
-            children: [
+        body: Row(
+          children: [
+            if (!_editorExpanded) ...[
+              Expanded(flex: 22, child: _LeftNavPane(shell: shell)),
+              VerticalDivider(width: 1, color: StrataPalette.outline),
+            ],
+            if (shell.currentIndex == 3)
+              Expanded(
+                flex: _editorExpanded ? 100 : 78,
+                child: _MiddlePane(shell: shell),
+              )
+            else ...[
               if (!_editorExpanded) ...[
-                Expanded(flex: 22, child: _LeftNavPane(shell: shell)),
+                Expanded(flex: 28, child: _MiddlePane(shell: shell)),
                 VerticalDivider(width: 1, color: StrataPalette.outline),
               ],
-              if (shell.currentIndex == 3)
-                Expanded(
-                  flex: _editorExpanded ? 100 : 78,
-                  child: _MiddlePane(shell: shell),
-                )
-              else ...[
-                if (!_editorExpanded) ...[
-                  Expanded(flex: 28, child: _MiddlePane(shell: shell)),
-                  VerticalDivider(width: 1, color: StrataPalette.outline),
-                ],
-                Expanded(
-                  flex: _editorExpanded ? 100 : 50,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: selectedNoteId != null
-                            ? EditorScreen(
-                                key: ValueKey('editor-$selectedNoteId'),
-                                noteId: selectedNoteId,
-                                onClose: () {
-                                  ref
-                                      .read(selectedNoteIdProvider.notifier)
-                                      .select(null);
-                                  setState(() => _editorExpanded = false);
-                                },
-                              )
-                            : const _EditorPlaceholderPane(),
-                      ),
-                      if (selectedNoteId != null)
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: SafeArea(
-                            child: Material(
-                              color: StrataPalette.surface.withValues(
-                                alpha: .85,
-                              ),
+              Expanded(
+                flex: _editorExpanded ? 100 : 50,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: selectedNoteId != null
+                          ? EditorScreen(
+                              key: ValueKey('editor-$selectedNoteId'),
+                              noteId: selectedNoteId,
+                              onClose: () {
+                                ref
+                                    .read(selectedNoteIdProvider.notifier)
+                                    .select(null);
+                                setState(() => _editorExpanded = false);
+                              },
+                            )
+                          : const _EditorPlaceholderPane(),
+                    ),
+                    if (selectedNoteId != null)
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: SafeArea(
+                          child: Material(
+                            color: StrataPalette.surface.withValues(alpha: .85),
+                            borderRadius: BorderRadius.circular(10),
+                            child: InkWell(
                               borderRadius: BorderRadius.circular(10),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(10),
-                                onTap: () => setState(
-                                  () => _editorExpanded = !_editorExpanded,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Icon(
-                                    _editorExpanded
-                                        ? Icons.close_fullscreen_rounded
-                                        : Icons.open_in_full_rounded,
-                                    size: 18,
-                                    color: StrataPalette.onSurfaceMuted,
-                                  ),
+                              onTap: () => setState(
+                                () => _editorExpanded = !_editorExpanded,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Icon(
+                                  _editorExpanded
+                                      ? Icons.close_fullscreen_rounded
+                                      : Icons.open_in_full_rounded,
+                                  size: 18,
+                                  color: StrataPalette.onSurfaceMuted,
                                 ),
                               ),
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
