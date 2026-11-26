@@ -22,13 +22,14 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-        appBar: AppBar(titleSpacing: 16, title: const Text('Settings')),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(titleSpacing: 16, title: const Text('Settings')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 640),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 104),
               children: [
                 _SectionCard(
                   title: 'Library',
@@ -256,8 +257,8 @@ class _Tile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
         onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Icon(icon, size: 22, color: StrataPalette.accent),
@@ -335,8 +336,7 @@ class _ThemeSection extends ConsumerWidget {
           _ThemeVariantTile(
             variant: variant,
             selected: variant == current,
-            onTap: () =>
-                ref.read(themeVariantProvider.notifier).set(variant),
+            onTap: () => ref.read(themeVariantProvider.notifier).set(variant),
           ),
         const Divider(height: 1),
         const _TextSizeTile(),
@@ -487,8 +487,7 @@ class _ThemeVariantTile extends StatelessWidget {
                         child: Row(
                           children: [
                             Expanded(child: Container(color: p.surfaceHigh)),
-                            Expanded(
-                                child: Container(color: p.surfaceHighest)),
+                            Expanded(child: Container(color: p.surfaceHighest)),
                           ],
                         ),
                       ),
@@ -504,8 +503,9 @@ class _ThemeVariantTile extends StatelessWidget {
                     Text(
                       variant.label,
                       style: TextStyle(
-                        fontWeight:
-                            selected ? FontWeight.w700 : FontWeight.w600,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
                         fontSize: 15,
                         color: selected
                             ? StrataPalette.accent

@@ -89,7 +89,7 @@ class _ScaffoldBase extends StatelessWidget {
                         ? const Alignment(-.8, -1)
                         : const Alignment(-.2, -1.1),
                     radius: 1.35,
-                    colors: [StrataPalette.glow, StrataPalette.background],
+                    colors: [StrataPalette.glow, StrataPalette.surface],
                     stops: const [0, .5],
                   ),
                 ),

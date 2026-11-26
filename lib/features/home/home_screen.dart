@@ -100,6 +100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final sort = ref.watch(noteSortProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       floatingActionButton: (searching || width < 640)
           ? null
           : const _NewNoteFab(),

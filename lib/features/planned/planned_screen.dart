@@ -26,25 +26,25 @@ class _PlannedScreenState extends ConsumerState<PlannedScreen> {
   final Set<int> _selectedIds = {};
 
   void _enterSelection(int id) => setState(() {
-        _selectionMode = true;
-        _selectedIds
-          ..clear()
-          ..add(id);
-      });
+    _selectionMode = true;
+    _selectedIds
+      ..clear()
+      ..add(id);
+  });
 
   void _toggleSelection(int id) => setState(() {
-        if (_selectedIds.contains(id)) {
-          _selectedIds.remove(id);
-          if (_selectedIds.isEmpty) _selectionMode = false;
-        } else {
-          _selectedIds.add(id);
-        }
-      });
+    if (_selectedIds.contains(id)) {
+      _selectedIds.remove(id);
+      if (_selectedIds.isEmpty) _selectionMode = false;
+    } else {
+      _selectedIds.add(id);
+    }
+  });
 
   void _clearSelection() => setState(() {
-        _selectionMode = false;
-        _selectedIds.clear();
-      });
+    _selectionMode = false;
+    _selectedIds.clear();
+  });
 
   Future<void> _bulkDelete() async {
     final count = _selectedIds.length;
@@ -110,7 +110,10 @@ class _PlannedScreenState extends ConsumerState<PlannedScreen> {
       await repo.save(note);
     }
     if (mounted) {
-      showToast(ref, 'Moved ${_selectedIds.length} note${_selectedIds.length == 1 ? '' : 's'}');
+      showToast(
+        ref,
+        'Moved ${_selectedIds.length} note${_selectedIds.length == 1 ? '' : 's'}',
+      );
       _clearSelection();
     }
   }
@@ -120,7 +123,9 @@ class _PlannedScreenState extends ConsumerState<PlannedScreen> {
     final plannedAsync = ref.watch(plannedNotesProvider);
     final size = MediaQuery.sizeOf(context);
     final isThreePane = size.width >= 1100 && size.width > size.height;
-    final selectedNoteId = isThreePane ? ref.watch(selectedNoteIdProvider) : null;
+    final selectedNoteId = isThreePane
+        ? ref.watch(selectedNoteIdProvider)
+        : null;
 
     final body = plannedAsync.when(
       loading: () => const NoteListSkeleton(),
@@ -158,7 +163,8 @@ class _PlannedScreenState extends ConsumerState<PlannedScreen> {
                           Expanded(
                             child: Text(
                               '${_selectedIds.length} selected',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
                           IconButton(
@@ -168,14 +174,17 @@ class _PlannedScreenState extends ConsumerState<PlannedScreen> {
                           ),
                           IconButton(
                             tooltip: 'Delete',
-                            onPressed: _selectedIds.isEmpty ? null : _bulkDelete,
+                            onPressed: _selectedIds.isEmpty
+                                ? null
+                                : _bulkDelete,
                             icon: const Icon(Icons.delete_outline_rounded),
                           ),
                         ],
                       )
                     : Text(
                         'Planned',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.3,
                             ),
@@ -189,6 +198,7 @@ class _PlannedScreenState extends ConsumerState<PlannedScreen> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         titleSpacing: _selectionMode ? 0 : 20,
         leading: _selectionMode
@@ -202,7 +212,9 @@ class _PlannedScreenState extends ConsumerState<PlannedScreen> {
           _selectionMode ? '${_selectedIds.length} selected' : 'Planned',
           style: _selectionMode
               ? null
-              : Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              : Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         actions: _selectionMode
             ? [
@@ -256,7 +268,10 @@ class _PlannedList extends ConsumerWidget {
               color: StrataPalette.accent.withValues(alpha: .8),
             ),
             const SizedBox(height: 16),
-            Text('Nothing scheduled', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Nothing scheduled',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 6),
             Text(
               'Reminders you set on notes show up here.',
@@ -275,11 +290,9 @@ class _PlannedList extends ConsumerWidget {
     void add(String label, Color color, bool Function(DateTime due) match) {
       final hits = [
         for (final n in notes)
-          if (match(DateTime(
-            n.dueDate!.year,
-            n.dueDate!.month,
-            n.dueDate!.day,
-          )))
+          if (match(
+            DateTime(n.dueDate!.year, n.dueDate!.month, n.dueDate!.day),
+          ))
             n,
       ];
       if (hits.isNotEmpty) groups.add((label, color, hits));
@@ -296,8 +309,11 @@ class _PlannedList extends ConsumerWidget {
     final upcomingEnd = today.add(const Duration(days: 7));
     final later = [
       for (final n in notes)
-        if (!DateTime(n.dueDate!.year, n.dueDate!.month, n.dueDate!.day)
-            .isBefore(upcomingEnd))
+        if (!DateTime(
+          n.dueDate!.year,
+          n.dueDate!.month,
+          n.dueDate!.day,
+        ).isBefore(upcomingEnd))
           n,
     ];
     if (later.isNotEmpty) {
@@ -307,14 +323,18 @@ class _PlannedList extends ConsumerWidget {
     var index = 0;
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: isThreePane ? double.infinity : 860),
+        constraints: BoxConstraints(
+          maxWidth: isThreePane ? double.infinity : 860,
+        ),
         child: ListView.builder(
           padding: const EdgeInsets.only(top: 4, bottom: 96),
           itemCount: groups.fold<int>(0, (n, g) => n + g.$3.length + 1),
           itemBuilder: (context, i) {
             var cursor = i;
             for (final (label, color, items) in groups) {
-              if (cursor == 0) return _SectionHeader(label: label, color: color);
+              if (cursor == 0) {
+                return _SectionHeader(label: label, color: color);
+              }
               cursor--;
               if (cursor < items.length) {
                 final note = items[cursor];
@@ -329,8 +349,10 @@ class _PlannedList extends ConsumerWidget {
                   onTap: selectionMode
                       ? () => onToggleSelection(note.id)
                       : (isThreePane
-                          ? () => ref.read(selectedNoteIdProvider.notifier).select(note.id)
-                          : null),
+                            ? () => ref
+                                  .read(selectedNoteIdProvider.notifier)
+                                  .select(note.id)
+                            : null),
                 );
               }
               cursor -= items.length;

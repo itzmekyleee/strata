@@ -22,25 +22,25 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
   final Set<int> _selectedIds = {};
 
   void _enterSelection(int id) => setState(() {
-        _selectionMode = true;
-        _selectedIds
-          ..clear()
-          ..add(id);
-      });
+    _selectionMode = true;
+    _selectedIds
+      ..clear()
+      ..add(id);
+  });
 
   void _toggleSelection(int id) => setState(() {
-        if (_selectedIds.contains(id)) {
-          _selectedIds.remove(id);
-          if (_selectedIds.isEmpty) _selectionMode = false;
-        } else {
-          _selectedIds.add(id);
-        }
-      });
+    if (_selectedIds.contains(id)) {
+      _selectedIds.remove(id);
+      if (_selectedIds.isEmpty) _selectionMode = false;
+    } else {
+      _selectedIds.add(id);
+    }
+  });
 
   void _clearSelection() => setState(() {
-        _selectionMode = false;
-        _selectedIds.clear();
-      });
+    _selectionMode = false;
+    _selectedIds.clear();
+  });
 
   Future<void> _bulkRestore() async {
     final actions = ref.read(noteActionsProvider);
@@ -59,7 +59,8 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
     final confirmed = await showConfirmDialog(
       context,
       title: 'Delete $count note${count == 1 ? '' : 's'} forever?',
-      message: 'This permanently removes the selected notes and their files. This cannot be undone.',
+      message:
+          'This permanently removes the selected notes and their files. This cannot be undone.',
       confirmLabel: 'Delete forever',
       icon: Icons.delete_forever_rounded,
     );
@@ -103,7 +104,10 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
                   color: StrataPalette.onSurfaceMuted.withValues(alpha: .7),
                 ),
                 const SizedBox(height: 16),
-                Text('Trash is empty', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Trash is empty',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 6),
                 Text(
                   'Deleted notes stay here for 30 days.',
@@ -118,9 +122,11 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
 
         return Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isThreePane ? double.infinity : 860),
+            constraints: BoxConstraints(
+              maxWidth: isThreePane ? double.infinity : 860,
+            ),
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
               itemCount: notes.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, i) {
@@ -130,16 +136,26 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
                   decoration: BoxDecoration(
                     color: checked
                         ? StrataPalette.accent.withValues(alpha: .08)
-                        : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .35),
+                        : Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: .35),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: checked ? StrataPalette.accent.withValues(alpha: .35) : StrataPalette.outline,
+                      color: checked
+                          ? StrataPalette.accent.withValues(alpha: .35)
+                          : StrataPalette.outline,
                     ),
                   ),
                   child: ListTile(
-                    onTap: _selectionMode ? () => _toggleSelection(note.id) : null,
-                    onLongPress: _selectionMode ? () => _toggleSelection(note.id) : () => _enterSelection(note.id),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    onTap: _selectionMode
+                        ? () => _toggleSelection(note.id)
+                        : null,
+                    onLongPress: _selectionMode
+                        ? () => _toggleSelection(note.id)
+                        : () => _enterSelection(note.id),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     leading: _selectionMode
                         ? AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
@@ -148,17 +164,31 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
                             height: 22,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: checked ? StrataPalette.accent : Colors.transparent,
+                              color: checked
+                                  ? StrataPalette.accent
+                                  : Colors.transparent,
                               border: Border.all(
-                                color: checked ? StrataPalette.accent : StrataPalette.onSurfaceMuted.withValues(alpha: .5),
+                                color: checked
+                                    ? StrataPalette.accent
+                                    : StrataPalette.onSurfaceMuted.withValues(
+                                        alpha: .5,
+                                      ),
                                 width: 1.8,
                               ),
                             ),
-                            child: checked ? const Icon(Icons.check_rounded, size: 14, color: Colors.white) : null,
+                            child: checked
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    size: 14,
+                                    color: Colors.white,
+                                  )
+                                : null,
                           )
                         : null,
                     title: Text(
-                      note.title.trim().isEmpty ? 'Untitled' : note.title.trim(),
+                      note.title.trim().isEmpty
+                          ? 'Untitled'
+                          : note.title.trim(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600),
@@ -179,16 +209,30 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
                             children: [
                               IconButton(
                                 tooltip: 'Restore',
-                                icon: const Icon(Icons.restore_rounded, color: StrataPalette.mint),
+                                icon: const Icon(
+                                  Icons.restore_rounded,
+                                  color: StrataPalette.mint,
+                                ),
                                 onPressed: () async {
-                                  await ref.read(noteActionsProvider).restore(note.id);
+                                  await ref
+                                      .read(noteActionsProvider)
+                                      .restore(note.id);
                                   showToast(ref, 'Note restored');
                                 },
                               ),
                               IconButton(
                                 tooltip: 'Delete forever',
-                                icon: Icon(Icons.delete_forever_rounded, color: StrataPalette.coral.withValues(alpha: .9)),
-                                onPressed: () => _confirmDeleteForever(context, ref, note.id),
+                                icon: Icon(
+                                  Icons.delete_forever_rounded,
+                                  color: StrataPalette.coral.withValues(
+                                    alpha: .9,
+                                  ),
+                                ),
+                                onPressed: () => _confirmDeleteForever(
+                                  context,
+                                  ref,
+                                  note.id,
+                                ),
                               ),
                             ],
                           ),
@@ -226,11 +270,16 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
                 child: _selectionMode
                     ? Row(
                         children: [
-                          IconButton(tooltip: 'Cancel selection', onPressed: _clearSelection, icon: const Icon(Icons.close_rounded)),
+                          IconButton(
+                            tooltip: 'Cancel selection',
+                            onPressed: _clearSelection,
+                            icon: const Icon(Icons.close_rounded),
+                          ),
                           Expanded(
                             child: Text(
                               '${_selectedIds.length} selected',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
                           ...selectionActions,
@@ -241,7 +290,8 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
                           Expanded(
                             child: Text(
                               'Trash',
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -0.3,
                                   ),
@@ -263,12 +313,19 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         titleSpacing: _selectionMode ? 0 : 20,
         leading: _selectionMode
-            ? IconButton(tooltip: 'Cancel selection', onPressed: _clearSelection, icon: const Icon(Icons.close_rounded))
+            ? IconButton(
+                tooltip: 'Cancel selection',
+                onPressed: _clearSelection,
+                icon: const Icon(Icons.close_rounded),
+              )
             : null,
-        title: Text(_selectionMode ? '${_selectedIds.length} selected' : 'Trash'),
+        title: Text(
+          _selectionMode ? '${_selectedIds.length} selected' : 'Trash',
+        ),
         actions: _selectionMode
             ? [...selectionActions, const SizedBox(width: 4)]
             : [
@@ -292,7 +349,8 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
     final confirmed = await showConfirmDialog(
       context,
       title: 'Delete forever?',
-      message: 'This permanently removes the note and its files. This cannot be undone.',
+      message:
+          'This permanently removes the note and its files. This cannot be undone.',
       confirmLabel: 'Delete forever',
       icon: Icons.delete_forever_rounded,
     );
