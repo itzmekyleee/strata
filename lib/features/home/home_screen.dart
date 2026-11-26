@@ -766,6 +766,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       enableDrag: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
+      showDragHandle: false,
+      elevation: 0,
       builder: (ctx) {
         final size = MediaQuery.sizeOf(ctx);
         final isWide = size.width >= 900;
