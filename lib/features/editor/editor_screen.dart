@@ -806,7 +806,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _watchDragOffset();
     });
-    final isMobile = MediaQuery.sizeOf(context).width < 640;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompactTitle = widget.onClose != null || screenWidth < 1100;
     final controller = _controller;
     if (controller == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -863,17 +864,17 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     valueListenable: _titleCtrl,
                     builder: (context, value, _) {
                       final len = value.text.trim().length;
-                      final baseFont = isMobile ? 17.0 : 15.5;
-                      final shrinkStart = isMobile ? 18 : 20;
+                      final baseFont = isCompactTitle ? 17.0 : 15.5;
+                      final shrinkStart = isCompactTitle ? 18 : 20;
                       final fontSize =
                           (baseFont -
                                   (len > shrinkStart
                                       ? (len - shrinkStart) *
-                                            (isMobile ? .10 : .14)
+                                            (isCompactTitle ? .10 : .14)
                                       : 0))
-                              .clamp(isMobile ? 14.0 : 12.5, baseFont);
+                              .clamp(isCompactTitle ? 14.0 : 12.5, baseFont);
                       return SizedBox(
-                        height: isMobile ? 44 : 40,
+                        height: isCompactTitle ? 44 : 40,
                         child: TextField(
                           controller: _titleCtrl,
                           onChanged: _onTitleChanged,
@@ -896,27 +897,27 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(
-                                isMobile ? 10 : 8,
+                                isCompactTitle ? 10 : 8,
                               ),
                               borderSide: BorderSide.none,
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(
-                                isMobile ? 10 : 8,
+                                isCompactTitle ? 10 : 8,
                               ),
                               borderSide: BorderSide.none,
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(
-                                isMobile ? 10 : 8,
+                                isCompactTitle ? 10 : 8,
                               ),
                               borderSide: BorderSide.none,
                             ),
                             contentPadding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 12 : 10,
-                              vertical: isMobile ? 10 : 8,
+                              horizontal: isCompactTitle ? 12 : 10,
+                              vertical: isCompactTitle ? 10 : 8,
                             ),
-                            isDense: !isMobile,
+                            isDense: !isCompactTitle,
                           ),
                         ),
                       );
